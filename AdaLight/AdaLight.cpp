@@ -18,6 +18,7 @@
 #include <chrono>
 #include <queue>
 #include <string>
+#include <sstream>
 #include <unordered_map>
 #include <vector>
 
@@ -278,6 +279,9 @@ static ULONGLONG s_tickCountStart = 0;
 // Frame rate of the last active period.
 static double s_frameRate = 0.0;
 
+// Whether or not resources have been acquired for the next timer tick
+static bool s_acquiredResources = false;
+
 // Clear out the cached resources.
 static void free_resources()
 {
@@ -287,12 +291,15 @@ static void free_resources()
 	s_frameRate = static_cast<double>(s_frameCount * 1000) / static_cast<double>(GetTickCount64() - s_tickCountStart);
 	s_frameCount = 0;
 	s_tickCountStart = 0;
+
+	s_acquiredResources = false;
 }
 
 // Fill in the current display bounds for all known displays.
 static void create_resources(HWND hwnd)
 {
 	s_tickCountStart = GetTickCount64();
+	s_acquiredResources = true;
 
 	if (!load_dxgi())
 	{
@@ -439,8 +446,9 @@ static void fill_serial_data()
 		DXGI_OUTDUPL_FRAME_INFO info;
 		ID3D11Texture2DPtr screenTexture;
 
-		// TODO: Recreate the duplication interface if this fails with DXGI_ERROR_ACCESS_LOST.
-		if (SUCCEEDED(device.duplication->AcquireNextFrame(c_msecDelay, &info, &resource)))
+		HRESULT hr = device.duplication->AcquireNextFrame(c_msecDelay, &info, &resource);
+
+		if (SUCCEEDED(hr))
 		{
 			screenTexture = resource;
 
@@ -453,6 +461,12 @@ static void fill_serial_data()
 			resource.Release();
 
 			device.duplication->ReleaseFrame();
+		}
+		else if (DXGI_ERROR_ACCESS_LOST == hr)
+		{
+			// Recreate the duplication interface if this fails with DXGI_ERROR_ACCESS_LOST.
+			free_resources();
+			return;
 		}
 	}
 
@@ -602,6 +616,43 @@ static void ClosePort()
 	}
 }
 
+// Try to open the COM port and look for an ack from the Arduino.
+static HANDLE TestPort(uint8_t portNumber)
+{
+	std::wostringstream oss;
+
+	oss << L"COM" << static_cast<int>(portNumber);
+
+	std::wstring portName(oss.str());
+	HANDLE portHandle = CreateFileW(portName.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+	if (INVALID_HANDLE_VALUE != portHandle)
+	{
+		COMMTIMEOUTS timeouts = {
+			0,				// ReadIntervalTimeout
+			0,				// ReadTotalTimeoutMultiplier
+			5000,			// ReadTotalTimeoutConstant
+			0,				// WriteTotalTimeoutMultiplier
+			c_msecDelay		// WriteTotalTimeoutConstant
+		};
+		uint8_t cookie[] = { 'A', 'd', 'a', '\n' };
+		uint8_t buffer[_countof(cookie)] = {};
+		DWORD cb = 0;
+
+		// Check for the magic cookie.
+		if (!SetCommTimeouts(portHandle, &timeouts)
+			|| !ReadFile(portHandle, buffer, sizeof(buffer), &cb, nullptr)
+			|| sizeof(buffer) != cb
+			|| 0 != memcmp(cookie, buffer, sizeof(cb)))
+		{
+			CloseHandle(portHandle);
+			portHandle = INVALID_HANDLE_VALUE;
+		}
+	}
+
+	return portHandle;
+}
+
 // Find the LED controller's COM port.
 static bool OpenPort()
 {
@@ -611,44 +662,12 @@ static bool OpenPort()
 		&& INVALID_HANDLE_VALUE == s_portHandle)
 	{
 		s_triedOnce = true;
-		s_portHandle = CreateFileW(L"COM3", GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
-		return true;
-
-		DCB config = {};
-		//COMMTIMEOUTS timeouts;
-
-		config.DCBlength = sizeof(config);
-		//COMMTIMEOUTS timeouts = {
-		//	50,	// ReadIntervalTimeout
-		//	50,	// ReadTotalTimeoutMultiplier
-		//	10,	// ReadTotalTimeoutConstant
-		//	10,	// WriteTotalTimeoutMultiplier
-		//	50	// WriteTotalTimeoutConstant
-		//};
-
-		if (INVALID_HANDLE_VALUE != s_portHandle
-			|| !GetCommState(s_portHandle, &config))
+		// [1, 255]: Terminate the loop when the byte overflows from 256 back to 0.
+		for (uint8_t i = 1; i != 0 && INVALID_HANDLE_VALUE == s_portHandle; ++i)
 		{
-			DisplayLastError();
-			ClosePort();
-			return false;
+			s_portHandle = TestPort(i);
 		}
-
-		config.BaudRate = CBR_115200;
-		config.fBinary = true;
-		config.ByteSize = 8;
-		config.Parity = NOPARITY;
-		config.StopBits = 1;
-
-		if (!SetCommState(s_portHandle, &config))
-		{
-			DisplayLastError();
-			ClosePort();
-			return false;
-		}
-
-		//SetCommTimeouts(s_portHandle, &timeouts);
 	}
 
 	return INVALID_HANDLE_VALUE != s_portHandle;
@@ -793,6 +812,11 @@ static LRESULT CALLBACK HiddenWindowProc(HWND hwnd, UINT message, WPARAM wParam,
 			break;
 
 		case WM_TIMER:
+			if (!session_state::s_acquiredResources)
+			{
+				session_state::create_resources(hwnd);
+			}
+
 			UpdateLEDs();
 			break;
 
