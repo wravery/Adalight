@@ -420,8 +420,6 @@ static void create_resources(HWND hwnd)
 	{
 		color = c_minBrightnessColor;
 	}
-
-	// TODO: Get the serial port ready
 }
 
 static void fill_serial_data()
