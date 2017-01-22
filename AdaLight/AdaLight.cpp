@@ -625,8 +625,10 @@ static HANDLE TestPort(uint8_t portNumber)
 
 	std::wstring portName(oss.str());
 	HANDLE portHandle = CreateFileW(portName.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	DCB configuration = { sizeof(configuration) };
 
-	if (INVALID_HANDLE_VALUE != portHandle)
+	if (INVALID_HANDLE_VALUE != portHandle
+		&& GetCommState(portHandle, &configuration))
 	{
 		COMMTIMEOUTS timeouts = {
 			0,				// ReadIntervalTimeout
@@ -638,13 +640,21 @@ static HANDLE TestPort(uint8_t portNumber)
 		uint8_t cookie[] = { 'A', 'd', 'a', '\n' };
 		uint8_t buffer[_countof(cookie)] = {};
 		DWORD cb = 0;
+		DCB original = configuration;
+
+		configuration.BaudRate = CBR_115200;
+		configuration.ByteSize = 8;
+		configuration.StopBits = ONESTOPBIT;
+		configuration.Parity = NOPARITY;
 
 		// Check for the magic cookie.
-		if (!SetCommTimeouts(portHandle, &timeouts)
+		if (!SetCommState(portHandle, &configuration)
+			|| !SetCommTimeouts(portHandle, &timeouts)
 			|| !ReadFile(portHandle, buffer, sizeof(buffer), &cb, nullptr)
 			|| sizeof(buffer) != cb
 			|| 0 != memcmp(cookie, buffer, sizeof(cb)))
 		{
+			SetCommState(portHandle, &original);
 			CloseHandle(portHandle);
 			portHandle = INVALID_HANDLE_VALUE;
 		}
