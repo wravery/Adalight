@@ -1,5 +1,9 @@
 #pragma once
 
+#include <windows.h>
+
+#include <tuple>
+
 #include "settings.h"
 #include "serial_buffer.h"
 
@@ -13,7 +17,7 @@ public:
 	void close();
 
 private:
-	HANDLE get_handle(uint8_t portNumber, bool testCookie);
+	std::pair<HANDLE, DCB> get_port(uint8_t portNumber, bool readTest);
 
 	const settings& _parameters;
 	HANDLE _portHandle = INVALID_HANDLE_VALUE;
