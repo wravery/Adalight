@@ -56,6 +56,7 @@ bool serial_port::open()
 			// Try to open every possible port from COM1 - COM255
 			for (uint8_t i = 0; i < maxPortNumber; ++i)
 			{
+				// See if any pending asynch reads have finished.
 				if (!pendingPorts.empty())
 				{
 					auto itr = pendingPorts.cbegin();
@@ -85,40 +86,27 @@ bool serial_port::open()
 
 					if (0 != _portNumber)
 					{
+						// If we found a match, we can skip waiting for the rest of the I/O to complete below.
 						pendingPorts.clear();
 						break;
 					}
 				}
 
+				// Try opening the next port.
 				auto port = std::make_unique<port_resources>();
 
-				std::tie(port->portHandle, port->configuration) = get_port(i + 1, true);
+				port->portNumber = i + 1;
+				std::tie(port->portHandle, port->configuration) = get_port(port->portNumber, true);
 				if (INVALID_HANDLE_VALUE == port->portHandle)
 				{
 					continue;
 				}
 
 				// Start an overlapped I/O call to look for the cookie sent from the Arduino.
-				port->portNumber = i + 1;
 				port->waitHandle = CreateEventW(nullptr, true, false, L"COM port overlapped I/O wait event");
 				port->overlapped.hEvent = port->waitHandle;
-
-				if (ReadFile(port->portHandle, reinterpret_cast<void*>(port->buffer.data()), sizeof(port->buffer), nullptr, &port->overlapped))
-				{
-					// If the read completes synchronously, check the result right away.
-					if (GetOverlappedResult(port->portHandle, &port->overlapped, &cb, false))
-					{
-						if (sizeof(cookie) == cb
-							&& 0 == memcmp(cookie, port->buffer.data(), sizeof(cookie)))
-						{
-							// We found a match!
-							_portNumber = port->portNumber;
-							pendingPorts.clear();
-							break;
-						}
-					}
-				}
-				else if (ERROR_IO_PENDING != GetLastError())
+				if (!ReadFile(port->portHandle, reinterpret_cast<void*>(port->buffer.data()), sizeof(port->buffer), nullptr, &port->overlapped)
+					&& ERROR_IO_PENDING != GetLastError())
 				{
 					// Any other error means we can't read from the port at all.
 					continue;
@@ -128,7 +116,7 @@ bool serial_port::open()
 				pendingPorts.push_back(std::move(port));
 			}
 
-			// Finally, finish waiting for any pending I/O.
+			// Finish waiting for any outstanding I/O.
 			for (const auto& port : pendingPorts)
 			{
 				if (GetOverlappedResult(port->portHandle, &port->overlapped, &cb, true)
