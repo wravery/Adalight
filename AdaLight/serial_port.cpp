@@ -103,7 +103,7 @@ bool serial_port::open()
 				}
 
 				// Start an overlapped I/O call to look for the cookie sent from the Arduino.
-				port->waitHandle = CreateEventW(nullptr, true, false, L"COM port overlapped I/O wait event");
+				port->waitHandle = CreateEventW(nullptr, true, false, nullptr);
 				port->overlapped.hEvent = port->waitHandle;
 				if (!ReadFile(port->portHandle, reinterpret_cast<void*>(port->buffer.data()), sizeof(port->buffer), nullptr, &port->overlapped)
 					&& ERROR_IO_PENDING != GetLastError())
