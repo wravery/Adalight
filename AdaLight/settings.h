@@ -19,49 +19,37 @@ struct settings
 	const double fade = 0.0;
 
 	// Serial device timeout (in milliseconds), for locating Arduino device
-	// running the corresponding LEDstream code. See notes later in the code...
-	// in some situations you may want to entirely comment out that block.
+	// running the corresponding LEDstream code.
 	const DWORD timeout = 5000;	// 5 seconds
 
 	// Cap the refresh rate at 30 FPS. If the update takes longer the FPS
 	// will actually be lower.
 	const UINT fpsMax = 30;
 
-	// PER-LED INFORMATION -------------------------------------------------------
-	// This array contains the 2D coordinates corresponding to each pixel in the
+	// This struct contains the 2D coordinates corresponding to each pixel in the
 	// LED strand, in the order that they're connected (i.e. the first element
 	// here belongs to the first LED in the strand, second element is the second
-	// LED, and so forth). Each triplet in this array consists of a display
-	// number (an index into the display array above, NOT necessarily the same as
-	// the system screen number) and an X and Y coordinate specified in the grid
-	// units given for that display. {0,0,0} is the top-left corner of the first
-	// display in the array.
-	// For our example purposes, the coordinate list below forms a ring around
-	// the perimeter of a single screen, with a one pixel gap at the bottom to
-	// accommodate a monitor stand. Modify this to match your own setup:
+	// LED, and so forth). Each pair in this array consists of an X and Y
+	// coordinate specified in the grid units given for that display where
+	// { 0, 0 } is the top-left corner of the display.
 	struct led_pos
 	{
 		size_t x;
 		size_t y;
 	};
 
-	// PER-DISPLAY INFORMATION ---------------------------------------------------
-	// This array contains details for each display that the software will
-	// process. If you have screen(s) attached that are not among those being
-	// "Adalighted," they should not be in this list. Each triplet in this
-	// array represents one display. The first number is the system screen
-	// number...typically the "primary" display on most systems is identified
-	// as screen #1, but since arrays are indexed from zero, use 0 to indicate
-	// the first screen, 1 to indicate the second screen, and so forth. This
-	// is the ONLY place system screen numbers are used...ANY subsequent
-	// references to displays are an index into this list, NOT necessarily the
-	// same as the system screen number. For example, if you have a three-
-	// screen setup and are illuminating only the third display, use '2' for
-	// the screen number here...and then, in subsequent section, '0' will be
-	// used to refer to the first/only display in this list.
-	// The second and third numbers of each triplet represent the width and
-	// height of a grid of LED pixels attached to the perimeter of this display.
-	// For example, '9, 6' = 9 LEDs across, 6 LEDs down.
+	// This struct contains details for each display that the software will
+	// process. The horizontalCount is the number LEDs accross the top of the
+	// AdaLight board, and the verticalCount is the number of LEDs up and down
+	// the sides. These counts are used to figure out how big a block of pixels
+	// should be to sample the edge around each LED.  If you have screen(s)
+	// attached that are not among those being "Adalighted," you only need to
+	// include them in this list if they show up before the "Adalighted"
+	// display(s) in the system's display enumeration. If you have multiple
+	// displays this might require some trial and error to figure out the precise
+	// order relative to your setup. To leave a gap in the list and include another
+	// display after that, just include an entry for the skipped display with
+	// { 0, 0 } for the horizontalCount and verticalCount.
 	struct display_config
 	{
 		size_t horizontalCount;
@@ -71,6 +59,10 @@ struct settings
 	};
 
 	const std::vector<display_config> displays = {
+		// For our example purposes, the coordinate list below forms a ring around
+		// the perimeter of a single screen, with a two pixel gap at the bottom to
+		// accommodate a monitor stand. Modify this to match your own setup:
+
 		{
 			// Screen 0: 10 LEDs across, 5 LEDs down
 			10, 5,
