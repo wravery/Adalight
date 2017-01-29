@@ -189,9 +189,11 @@ bool screen_samples::take_samples(serial_buffer& serial)
 			resource.Release();
 
 		}
-		else if (DXGI_ERROR_ACCESS_LOST == hr)
+		else if (DXGI_ERROR_ACCESS_LOST == hr
+			|| DXGI_ERROR_INVALID_CALL == hr)
 		{
-			// Recreate the duplication interface if this fails with DXGI_ERROR_ACCESS_LOST.
+			// Recreate the duplication interface if this fails with with an expected error that invalidates
+			// the duplication interface or that might allow us to switch to MapDesktopSurface.
 			free_resources();
 			return false;
 		}
@@ -229,9 +231,12 @@ bool screen_samples::take_samples(serial_buffer& serial)
 			{
 				HRESULT hr = device.duplication->MapDesktopSurface(&desktopMap);
 
-				if (DXGI_ERROR_ACCESS_LOST == hr)
+				if (DXGI_ERROR_ACCESS_LOST == hr
+					|| DXGI_ERROR_UNSUPPORTED == hr
+					|| DXGI_ERROR_INVALID_CALL == hr)
 				{
-					// Recreate the duplication interface if this fails with DXGI_ERROR_ACCESS_LOST.
+					// Recreate the duplication interface if this fails with with an expected error that invalidates
+					// the duplication interface or requires that we switch to AcquireNextFrame.
 					free_resources();
 					return false;
 				}
