@@ -1,6 +1,11 @@
 #include "stdafx.h"
 #include "screen_samples.h"
 
+#ifdef _DEBUG
+#include <string>
+#include <sstream>
+#endif
+
 #undef min
 #undef max
 
@@ -80,6 +85,7 @@ void screen_samples::create_resources()
 						context,
 						duplication,
 						staging,
+						false,
 						{ width, height }
 					});
 				}
@@ -89,6 +95,11 @@ void screen_samples::create_resources()
 		}
 
 		adapter.Release();
+	}
+
+	if (_displays.empty())
+	{
+		return;
 	}
 
 	// Samples take the center point of each cell in a 16x16 grid
@@ -157,6 +168,11 @@ void screen_samples::create_resources()
 
 bool screen_samples::take_samples(serial_buffer& serial)
 {
+	if (!_acquiredResources)
+	{
+		return false;
+	}
+
 	// Take a screenshot for all of the devices that require a staging texture.
 	for (auto& device : _displays)
 	{
@@ -172,12 +188,17 @@ bool screen_samples::take_samples(serial_buffer& serial)
 		DXGI_OUTDUPL_FRAME_INFO info;
 		ID3D11Texture2DPtr screenTexture;
 
-		device.duplication->ReleaseFrame();
+		if (device.acquiredFrame)
+		{
+			device.duplication->ReleaseFrame();
+			device.acquiredFrame = false;
+		}
 
 		HRESULT hr = device.duplication->AcquireNextFrame(_parameters.delay, &info, &resource);
 
 		if (SUCCEEDED(hr))
 		{
+			device.acquiredFrame = true;
 			screenTexture = resource;
 
 			if (screenTexture)
@@ -187,7 +208,6 @@ bool screen_samples::take_samples(serial_buffer& serial)
 
 			screenTexture.Release();
 			resource.Release();
-
 		}
 		else if (DXGI_ERROR_ACCESS_LOST == hr
 			|| DXGI_ERROR_INVALID_CALL == hr)
@@ -335,12 +355,36 @@ bool screen_samples::take_samples(serial_buffer& serial)
 
 void screen_samples::free_resources()
 {
+	if (!_acquiredResources)
+	{
+		return;
+	}
+
+	for (auto& display : _displays)
+	{
+		if (display.acquiredFrame)
+		{
+			display.duplication->ReleaseFrame();
+			display.acquiredFrame = false;
+		}
+	}
+
 	_displays.clear();
 	_pixelOffsets.clear();
 
-	_frameRate = static_cast<double>(_frameCount * 1000) / static_cast<double>(GetTickCount64() - _startTick);
-	_frameCount = 0;
-	_startTick = 0;
+	if (_startTick > 0)
+	{
+		_frameRate = static_cast<double>(_frameCount * 1000) / static_cast<double>(GetTickCount64() - _startTick);
+		_frameCount = 0;
+		_startTick = 0;
+
+#ifdef _DEBUG
+		std::wostringstream oss;
+
+		oss << L"Frame Rate: " << _frameRate << std::endl;
+		OutputDebugStringW(oss.str().c_str());
+#endif
+	}
 
 	_acquiredResources = false;
 }

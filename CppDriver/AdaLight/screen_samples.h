@@ -42,6 +42,7 @@ private:
 		ID3D11DeviceContextPtr context;
 		IDXGIOutputDuplicationPtr duplication;
 		ID3D11Texture2DPtr staging;
+		bool acquiredFrame;
 		SIZE bounds;
 	};
 
