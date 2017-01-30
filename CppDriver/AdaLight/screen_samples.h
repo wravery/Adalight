@@ -26,7 +26,7 @@ class screen_samples
 public:
 	screen_samples(const settings& parameters, const gamma_correction& gamma);
 
-	void create_resources();
+	bool create_resources();
 	bool take_samples(serial_buffer& serial);
 	void free_resources();
 

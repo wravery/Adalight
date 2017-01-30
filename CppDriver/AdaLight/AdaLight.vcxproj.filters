@@ -36,6 +36,9 @@
     <ClInclude Include="serial_port.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="update_timer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -57,6 +60,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="serial_port.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="update_timer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

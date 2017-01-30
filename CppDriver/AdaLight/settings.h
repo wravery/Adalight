@@ -20,11 +20,16 @@ struct settings
 
 	// Serial device timeout (in milliseconds), for locating Arduino device
 	// running the corresponding LEDstream code.
-	const DWORD timeout = 5000;	// 5 seconds
+	const DWORD timeout = 5000; // 5 seconds
 
 	// Cap the refresh rate at 30 FPS. If the update takes longer the FPS
 	// will actually be lower.
 	const UINT fpsMax = 30;
+
+	// Timer frequency (in milliseconds) when we're throttled, e.g. when a UAC prompt
+	// is displayed. If this value is higher, we'll use less CPU when we can't sample
+	// the display, but it will take longer to resume sampling again.
+	const UINT throttleTimer = 3000; // 3 seconds
 
 	// This struct contains the 2D coordinates corresponding to each pixel in the
 	// LED strand, in the order that they're connected (i.e. the first element

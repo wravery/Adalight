@@ -51,6 +51,7 @@
 #include "serial_buffer.h"
 #include "screen_samples.h"
 #include "serial_port.h"
+#include "update_timer.h"
 
 // TODO: Put this in some sort of persistence? Create configuration UI? Parse the settings from the command line?
 static const settings parameters;
@@ -59,6 +60,7 @@ static serial_buffer serial(parameters);
 static gamma_correction gamma;
 static screen_samples samples(parameters, gamma);
 static serial_port port(parameters);
+static update_timer timer(parameters);
 
 // Reset the LED strip.
 static void ResetLEDs()
@@ -77,30 +79,6 @@ static void UpdateLEDs()
 // Hidden window class name
 static PCWSTR s_windowClassName = L"AdaLightListener";
 
-static bool s_timerSet = false;
-
-// Start the timer if it's not running.
-static void StartTimer(HWND hwnd)
-{
-	if (!s_timerSet)
-	{
-		SetTimer(hwnd, 0, parameters.delay, nullptr);
-		s_timerSet = true;
-	}
-}
-
-// Stop the timer if it is running.
-static void StopTimer(HWND hwnd)
-{
-	if (s_timerSet)
-	{
-		KillTimer(hwnd, 0);
-		s_timerSet = false;
-
-		ResetLEDs();
-	}
-}
-
 static bool s_connectedToConsole = !GetSystemMetrics(SM_REMOTESESSION);
 
 // Handle attaching and reattaching to the console.
@@ -110,7 +88,7 @@ static void AttachToConsole(HWND hwnd)
 	{
 		port.open();
 		samples.create_resources();
-		StartTimer(hwnd);
+		timer.start(hwnd);
 	}
 }
 
@@ -119,7 +97,11 @@ static void DetachFromConsole(HWND hwnd)
 {
 	if (s_connectedToConsole)
 	{
-		StopTimer(hwnd);
+		if (timer.stop(hwnd))
+		{
+			ResetLEDs();
+		}
+
 		samples.free_resources();
 		port.close();
 	}
@@ -135,8 +117,8 @@ static LRESULT CALLBACK HiddenWindowProc(HWND hwnd, UINT message, WPARAM wParam,
 			break;
 
 		case WM_DESTROY:
-			StopTimer(hwnd);
 			WTSUnRegisterSessionNotification(hwnd);
+			DetachFromConsole(hwnd);
 			PostQuitMessage(0);
 			break;
 
@@ -178,7 +160,14 @@ static LRESULT CALLBACK HiddenWindowProc(HWND hwnd, UINT message, WPARAM wParam,
 		case WM_TIMER:
 			if (samples.empty())
 			{
-				samples.create_resources();
+				if (samples.create_resources())
+				{
+					timer.resume(hwnd);
+				}
+				else if (timer.throttle(hwnd))
+				{
+					ResetLEDs();
+				}
 			}
 
 			UpdateLEDs();

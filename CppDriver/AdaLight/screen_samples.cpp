@@ -15,11 +15,15 @@ screen_samples::screen_samples(const settings& parameters, const gamma_correctio
 {
 }
 
-void screen_samples::create_resources()
+bool screen_samples::create_resources()
 {
-	if (!get_factory())
+	if (_acquiredResources)
 	{
-		return;
+		return true;
+	}
+	else if (!get_factory())
+	{
+		return false;
 	}
 
 	_displays.reserve(_parameters.displays.size());
@@ -99,7 +103,7 @@ void screen_samples::create_resources()
 
 	if (_displays.empty())
 	{
-		return;
+		return false;
 	}
 
 	// Samples take the center point of each cell in a 16x16 grid
@@ -164,6 +168,8 @@ void screen_samples::create_resources()
 
 	_acquiredResources = true;
 	_startTick = GetTickCount64();
+
+	return true;
 }
 
 bool screen_samples::take_samples(serial_buffer& serial)
