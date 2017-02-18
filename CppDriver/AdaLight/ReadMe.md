@@ -41,7 +41,7 @@ sampling. The best framerate I could manage with Processing was ~14 FPS at 4K, a
 RAM to do that.
 
 By porting the core program logic to C++ and using the DirectX 11 `IDXGIOutputDuplication` interface, I was able
-to boost the framerate to 21 FPS with 0% - 2% CPU and 49 MB of RAM. I'm also able to listen for some lower level
+to boost the framerate to 29 FPS with 2% - 4% CPU and 49 MB of RAM. I'm also able to listen for some lower level
 Windows notifications, so this program works much better if you switch between multiple users, lock your screen,
 use remote desktop, or just want to put your computer to sleep. Of course, your mileage may vary, but if you intend
 to use AdaLight for more immersive gaming experiences, this makes its resource usage much more acceptable.

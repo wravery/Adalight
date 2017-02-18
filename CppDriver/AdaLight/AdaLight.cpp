@@ -61,33 +61,45 @@ static gamma_correction gamma;
 static screen_samples samples(parameters, gamma);
 static serial_port port(parameters);
 
-static update_timer timer(parameters, [](update_timer& timer)
+// Construct an update_timer and keep a std::weak_ptr to it for re-use as long as it's alive.
+static std::shared_ptr<update_timer> get_timer()
 {
-	// Try to get the resources and resume the timer
-	if (samples.empty())
+	static std::weak_ptr<update_timer> weakTimer;
+	auto timer = weakTimer.lock();
+
+	if (!timer)
 	{
-		if (samples.create_resources())
+		timer = std::make_shared<update_timer>(parameters,
+			[](std::shared_ptr<update_timer> timer)
 		{
-			timer.resume();
-		}
-		else if (timer.throttle())
+			// Try to get the resources and resume the timer
+			if (samples.empty())
+			{
+				if (samples.create_resources())
+				{
+					timer->resume();
+				}
+				else if (timer->throttle())
+				{
+					serial.clear();
+				}
+			}
+
+			// Update the LED strip.
+			samples.take_samples(serial);
+			port.send(serial);
+		}, [](std::shared_ptr<update_timer> /*timer*/)
 		{
 			// Reset the LED strip.
 			serial.clear();
 			port.send(serial);
-			return;
-		}
+		});
+
+		weakTimer = timer;
 	}
 
-	// Update the LED strip.
-	samples.take_samples(serial);
-	port.send(serial);
-}, [](update_timer& /*timer*/)
-{
-	// Reset the LED strip.
-	serial.clear();
-	port.send(serial);
-});
+	return timer;
+}
 
 // Hidden window class name
 static PCWSTR s_windowClassName = L"AdaLightListener";
@@ -99,14 +111,16 @@ static void AttachToConsole()
 {
 	if (s_connectedToConsole)
 	{
+		auto timer = get_timer();
+
 		port.open();
 
 		if (samples.create_resources())
 		{
-			timer.resume();
+			timer->resume();
 		}
 
-		timer.start();
+		timer->start();
 	}
 }
 
@@ -115,7 +129,9 @@ static void DetachFromConsole()
 {
 	if (s_connectedToConsole)
 	{
-		timer.stop();
+		auto timer = get_timer();
+
+		timer->stop();
 		samples.free_resources();
 		port.close();
 	}

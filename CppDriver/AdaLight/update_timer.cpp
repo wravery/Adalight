@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "update_timer.h"
 
-update_timer::update_timer(const settings& parameters, std::function<void(update_timer&)>&& onUpdate, std::function<void(update_timer&)>&& onStop)
+update_timer::update_timer(const settings& parameters, std::function<void(std::shared_ptr<update_timer>)>&& onUpdate, std::function<void(std::shared_ptr<update_timer>)>&& onStop)
 	: _parameters(parameters)
 	, _onUpdate(std::move(onUpdate))
 	, _onStop(std::move(onStop))
@@ -12,57 +12,59 @@ bool update_timer::start()
 {
 	if (!_timerStarted)
 	{
+		auto timer = shared_from_this();
+
 		_timerMutex.lock();
 		_timerStarted = true;
 
 		std::lock_guard<std::mutex> workerGuard(_workerMutex);
 
 		_workerStarted = true;
-		_workerThread = std::thread([this]()
+		_workerThread = std::thread([timer]()
 		{
-			std::unique_lock<std::mutex> workerLock(_workerMutex);
+			std::unique_lock<std::mutex> workerLock(timer->_workerMutex);
 
-			while (_workerStarted)
+			while (timer->_workerStarted)
 			{
-				_workerCondition.wait(workerLock, [this]()
+				timer->_workerCondition.wait(workerLock, [timer]()
 				{
-					return _timerFired;
+					return timer->_timerFired;
 				});
 
-				_timerFired = false;
-				_onUpdate(*this);
+				timer->_timerFired = false;
+				timer->_onUpdate(timer);
 			}
 
-			_onStop(*this);
+			timer->_onStop(timer);
 		});
 
-		_timerThread = std::thread([this]()
+		_timerThread = std::thread([timer]()
 		{
 			bool stopped = false;
-			std::unique_lock<std::timed_mutex> timerLock(_timerMutex, std::defer_lock);
+			std::unique_lock<std::timed_mutex> timerLock(timer->_timerMutex, std::defer_lock);
 
 			while (!stopped)
 			{
-				const auto delay = std::chrono::milliseconds(_timerThrottled
-					? _parameters.throttleTimer
-					: _parameters.delay);
+				const auto delay = std::chrono::milliseconds(timer->_timerThrottled
+					? timer->_parameters.throttleTimer
+					: timer->_parameters.delay);
 
 				// This should always timeout as long as the _timerMutex is locked by the main thread.
 				stopped = timerLock.try_lock_for(delay);
 
-				std::unique_lock<std::mutex> workerLock(_workerMutex);
+				std::unique_lock<std::mutex> workerLock(timer->_workerMutex);
 
 				if (stopped)
 				{
-					_workerStarted = false;
+					timer->_workerStarted = false;
 				}
 
-				_timerFired = true;
+				timer->_timerFired = true;
 				workerLock.unlock();
-				_workerCondition.notify_one();
+				timer->_workerCondition.notify_one();
 			}
 
-			_workerThread.join();
+			timer->_workerThread.join();
 		});
 
 		return true;
