@@ -60,21 +60,34 @@ static serial_buffer serial(parameters);
 static gamma_correction gamma;
 static screen_samples samples(parameters, gamma);
 static serial_port port(parameters);
-static update_timer timer(parameters);
 
-// Reset the LED strip.
-static void ResetLEDs()
+static update_timer timer(parameters, [](update_timer& timer)
 {
-	serial.clear();
-	port.send(serial);
-}
+	// Try to get the resources and resume the timer
+	if (samples.empty())
+	{
+		if (samples.create_resources())
+		{
+			timer.resume();
+		}
+		else if (timer.throttle())
+		{
+			// Reset the LED strip.
+			serial.clear();
+			port.send(serial);
+			return;
+		}
+	}
 
-// Update the LED strip.
-static void UpdateLEDs()
-{
+	// Update the LED strip.
 	samples.take_samples(serial);
 	port.send(serial);
-}
+}, [](update_timer& /*timer*/)
+{
+	// Reset the LED strip.
+	serial.clear();
+	port.send(serial);
+});
 
 // Hidden window class name
 static PCWSTR s_windowClassName = L"AdaLightListener";
@@ -82,26 +95,27 @@ static PCWSTR s_windowClassName = L"AdaLightListener";
 static bool s_connectedToConsole = !GetSystemMetrics(SM_REMOTESESSION);
 
 // Handle attaching and reattaching to the console.
-static void AttachToConsole(HWND hwnd)
+static void AttachToConsole()
 {
 	if (s_connectedToConsole)
 	{
 		port.open();
-		samples.create_resources();
-		timer.start(hwnd);
+
+		if (samples.create_resources())
+		{
+			timer.resume();
+		}
+
+		timer.start();
 	}
 }
 
 // Handle detaching from the console.
-static void DetachFromConsole(HWND hwnd)
+static void DetachFromConsole()
 {
 	if (s_connectedToConsole)
 	{
-		if (timer.stop(hwnd))
-		{
-			ResetLEDs();
-		}
-
+		timer.stop();
 		samples.free_resources();
 		port.close();
 	}
@@ -118,7 +132,7 @@ static LRESULT CALLBACK HiddenWindowProc(HWND hwnd, UINT message, WPARAM wParam,
 
 		case WM_DESTROY:
 			WTSUnRegisterSessionNotification(hwnd);
-			DetachFromConsole(hwnd);
+			DetachFromConsole();
 			PostQuitMessage(0);
 			break;
 
@@ -127,20 +141,20 @@ static LRESULT CALLBACK HiddenWindowProc(HWND hwnd, UINT message, WPARAM wParam,
 			{
 				case WTS_CONSOLE_CONNECT:
 					s_connectedToConsole = true;
-					AttachToConsole(hwnd);
+					AttachToConsole();
 					break;
 
 				case WTS_CONSOLE_DISCONNECT:
-					DetachFromConsole(hwnd);
+					DetachFromConsole();
 					s_connectedToConsole = false;
 					break;
 
 				case WTS_SESSION_LOCK:
-					DetachFromConsole(hwnd);
+					DetachFromConsole();
 					break;
 
 				case WTS_SESSION_UNLOCK:
-					AttachToConsole(hwnd);
+					AttachToConsole();
 					break;
 
 				default:
@@ -155,22 +169,6 @@ static LRESULT CALLBACK HiddenWindowProc(HWND hwnd, UINT message, WPARAM wParam,
 				samples.free_resources();
 				samples.create_resources();
 			}
-			break;
-
-		case WM_TIMER:
-			if (samples.empty())
-			{
-				if (samples.create_resources())
-				{
-					timer.resume(hwnd);
-				}
-				else if (timer.throttle(hwnd))
-				{
-					ResetLEDs();
-				}
-			}
-
-			UpdateLEDs();
 			break;
 
 		default:
@@ -222,7 +220,7 @@ int WINAPI wWinMain(HINSTANCE hinstExe, HINSTANCE /*hinstPrev*/, PWSTR /*wzCmdLi
 	HWND hwnd = CreateWindowExW(0, s_windowClassName, nullptr, 0, 0, 0, 0, 0, HWND_DESKTOP, NULL, hinstExe, nullptr);
 
 	// Start processing messages/timers.
-	AttachToConsole(hwnd);
+	AttachToConsole();
 
 	BOOL result;
 	MSG msg;
