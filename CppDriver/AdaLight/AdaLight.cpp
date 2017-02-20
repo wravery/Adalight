@@ -72,10 +72,11 @@ static std::shared_ptr<update_timer> get_timer()
 		timer = std::make_shared<update_timer>(parameters,
 			[](std::shared_ptr<update_timer> timer)
 		{
-			// Try to get the resources and resume the timer
+			// Try to get the resources and resume the timer.
 			if (samples.empty())
 			{
-				if (samples.create_resources())
+				if (port.open()
+					&& samples.create_resources())
 				{
 					timer->resume();
 				}
@@ -93,6 +94,10 @@ static std::shared_ptr<update_timer> get_timer()
 			// Reset the LED strip.
 			serial.clear();
 			port.send(serial);
+
+			// Free resources anytime the update timer stops completely.
+			samples.free_resources();
+			port.close();
 		});
 
 		weakTimer = timer;
@@ -113,13 +118,7 @@ static void AttachToConsole()
 	{
 		auto timer = get_timer();
 
-		port.open();
-
-		if (samples.create_resources())
-		{
-			timer->resume();
-		}
-
+		timer->resume();
 		timer->start();
 	}
 }
@@ -129,11 +128,7 @@ static void DetachFromConsole()
 {
 	if (s_connectedToConsole)
 	{
-		auto timer = get_timer();
-
-		timer->stop();
-		samples.free_resources();
-		port.close();
+		get_timer()->stop();
 	}
 }
 
@@ -180,11 +175,8 @@ static LRESULT CALLBACK HiddenWindowProc(HWND hwnd, UINT message, WPARAM wParam,
 			break;
 
 		case WM_DISPLAYCHANGE:
-			if (s_connectedToConsole)
-			{
-				samples.free_resources();
-				samples.create_resources();
-			}
+			DetachFromConsole();
+			AttachToConsole();
 			break;
 
 		default:
