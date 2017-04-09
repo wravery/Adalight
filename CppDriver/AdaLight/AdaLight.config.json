@@ -1,0 +1,59 @@
+{
+  // Minimum LED brightness; some users prefer a small amount of backlighting
+  // at all times, regardless of screen content. Higher values are brighter,
+  // or set to 0 to disable this feature.
+  "minBrightness": 64,
+
+  // LED transition speed; it's sometimes distracting if LEDs instantaneously
+  // track screen contents (such as during bright flashing sequences), so this
+  // feature enables a gradual fade to each new LED state. Higher numbers yield
+  // slower transitions (max of 0.5), or set to 0 to disable this feature
+  // (immediate transition of all LEDs).
+  "fade": 0,
+
+  // Serial device timeout (in milliseconds), for locating Arduino device
+  // running the corresponding LEDstream code.
+  "timeout": 5000, // 5 seconds
+
+  // Cap the refresh rate at 30 FPS. If the update takes longer the FPS
+  // will actually be lower.
+  "fpsMax": 30,
+
+  // Timer frequency (in milliseconds) when we're throttled, e.g. when a UAC prompt
+  // is displayed. If this value is higher, we'll use less CPU when we can't sample
+  // the display, but it will take longer to resume sampling again.
+  "throttleTimer": 3000, // 3 seconds
+
+  // This array contains details for each display that the software will
+  // process. The horizontalCount is the number LEDs accross the top of the
+  // AdaLight board, and the verticalCount is the number of LEDs up and down
+  // the sides. These counts are used to figure out how big a block of pixels
+  // should be to sample the edge around each LED.  If you have screen(s)
+  // attached that are not among those being "Adalighted," you only need to
+  // include them in this list if they show up before the "Adalighted"
+  // display(s) in the system's display enumeration. If you have multiple
+  // displays this might require some trial and error to figure out the precise
+  // order relative to your setup. To leave a gap in the list and include another
+  // display after that, just include an entry for the skipped display with
+  // { 0, 0 } for the horizontalCount and verticalCount.
+  "displays": [
+    {
+      "horizontalCount": 10,
+      "verticalCount": 5,
+
+      "positions": [
+        // Bottom edge, left half
+        { "x": 3, "y": 4 }, { "x": 2, "y": 4 }, { "x": 1, "y": 4 },
+        // Left edge
+        { "x": 0, "y": 4 }, { "x": 0, "y": 3 }, { "x": 0, "y": 2 }, { "x": 0, "y": 1 },
+        // Top edge
+        { "x": 0, "y": 0 }, { "x": 1, "y": 0 }, { "x": 2, "y": 0 }, { "x": 3, "y": 0 }, { "x": 4, "y": 0 },
+        { "x": 5, "y": 0 }, { "x": 6, "y": 0 }, { "x": 7, "y": 0 }, { "x": 8, "y": 0 }, { "x": 9, "y": 0 },
+        // Right edge
+        { "x": 9, "y": 1 }, { "x": 9, "y": 2 }, { "x": 9, "y": 3 }, { "x": 9, "y": 4 },
+        // Bottom edge, right half
+        { "x": 8, "y": 4 }, { "x": 7, "y": 4 }, { "x": 6, "y": 4 }
+      ]
+    }
+  ]
+}

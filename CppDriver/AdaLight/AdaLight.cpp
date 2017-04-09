@@ -53,8 +53,7 @@
 #include "serial_port.h"
 #include "update_timer.h"
 
-// TODO: Put this in some sort of persistence? Create configuration UI? Parse the settings from the command line?
-static const settings parameters;
+static const settings parameters(L"AdaLight.config.json");
 
 static serial_buffer serial(parameters);
 static gamma_correction gamma;

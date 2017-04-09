@@ -1,35 +1,40 @@
 #pragma once
 
+#include <string>
 #include <vector>
 
 struct settings
 {
-	settings();
+	// We serialize to/from AdaLight.config.json in the current directory. See the
+	// included AdaLight.config.json for an example and a starting point. If the config file
+	// does not exist we'll use the default values in this header and save them out to
+	// Adalight.config.json for customization.
+	settings(std::wstring&& configFilePath);
 
 	// Minimum LED brightness; some users prefer a small amount of backlighting
 	// at all times, regardless of screen content. Higher values are brighter,
 	// or set to 0 to disable this feature.
-	const uint8_t minBrightness = 64;
+	uint8_t minBrightness = 64;
 
 	// LED transition speed; it's sometimes distracting if LEDs instantaneously
 	// track screen contents (such as during bright flashing sequences), so this
 	// feature enables a gradual fade to each new LED state. Higher numbers yield
 	// slower transitions (max of 0.5), or set to 0 to disable this feature
 	// (immediate transition of all LEDs).
-	const double fade = 0.0;
+	double fade = 0.0;
 
 	// Serial device timeout (in milliseconds), for locating Arduino device
 	// running the corresponding LEDstream code.
-	const DWORD timeout = 5000; // 5 seconds
+	DWORD timeout = 5000; // 5 seconds
 
 	// Cap the refresh rate at 30 FPS. If the update takes longer the FPS
 	// will actually be lower.
-	const UINT fpsMax = 30;
+	UINT fpsMax = 30;
 
 	// Timer frequency (in milliseconds) when we're throttled, e.g. when a UAC prompt
 	// is displayed. If this value is higher, we'll use less CPU when we can't sample
 	// the display, but it will take longer to resume sampling again.
-	const UINT throttleTimer = 3000; // 3 seconds
+	UINT throttleTimer = 3000; // 3 seconds
 
 	// This struct contains the 2D coordinates corresponding to each pixel in the
 	// LED strand, in the order that they're connected (i.e. the first element
@@ -63,7 +68,7 @@ struct settings
 		std::vector<led_pos> positions;
 	};
 
-	const std::vector<display_config> displays = {
+	std::vector<display_config> displays = {
 		// For our example purposes, the coordinate list below forms a ring around
 		// the perimeter of a single screen, with a two pixel gap at the bottom to
 		// accommodate a monitor stand. Modify this to match your own setup:
@@ -109,8 +114,11 @@ struct settings
 		//},
 	};
 
-	const DWORD minBrightnessColor;
-	const size_t totalLedCount;
-	const double weight;
-	const UINT delay;
+	DWORD minBrightnessColor;
+	size_t totalLedCount;
+	double weight;
+	UINT delay;
+
+private:
+	const std::wstring _configFilePath;
 };

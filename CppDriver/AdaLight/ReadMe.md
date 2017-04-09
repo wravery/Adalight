@@ -19,13 +19,20 @@ Start with the original [AdaLight guide](https://learn.adafruit.com/adalight-diy
 to make your AdaLight and get the Arduino sketch up and running. This driver program runs on the PC and communicates
 with the same serial protocol as the Processing script referenced in the guide, but with much lower overhead.
 
+### Building the CppDriver project
+
+*You can use pre-built binaries instead if you prefer, I put them in [AdaLight-Cpp.zip](./CppDriver/AdaLight-Cpp.zip).*
+
 At the point where the guide says to download Processing, instead you will need Visual Studio with the basic C++
 features enabled; you don't need the Windows XP support or MFC libraries for this project. If you don't already
 have Visual Studio installed, you can get a free Community edition from https://www.visualstudio.com/free-developer-offers/.
 
-When you have everything downloaded and you've got this project loaded in Visual Studio, look for [settings.h](./settings.h)
-and follow along with the comment blocks to make it match your own setup configuration. Pay particular attention
-to the `displays` member, that's where you'll define the layout of your LEDs around the edge of the monitor.
+### Configuring your displays
+
+When you have AdaLight.exe built, look for [Adalight.config.json](./CppDriver/Adalight.config.json) and follow along with
+the comment blocks to make it match your own setup configuration. Pay particular attention to the `displays` member, that's
+where you'll define the layout of your LEDs around the edge of the monitor. Put your customized configuration file in the
+same working directory as AdaLight.exe, then try running AdaLight.exe.
 
 If you get stuck and need some help, go ahead and try the original Processing version. It has a preview window that
 lets you visualize which blocks of the screen are getting mapped to the LEDs. The configuration of `displays` and
