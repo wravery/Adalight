@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "settings.h"
 
+#include <cpprest/json.h>
+
 #include <numeric>
 
 settings::settings()

@@ -69,4 +69,7 @@
   <ItemGroup>
     <Text Include="ReadMe.md" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
 </Project>
