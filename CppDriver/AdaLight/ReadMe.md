@@ -21,7 +21,7 @@ with the same serial protocol as the Processing script referenced in the guide, 
 
 ### Building the CppDriver project
 
-*You can use pre-built binaries instead if you prefer, I put them in [AdaLight-Cpp.zip](./CppDriver/AdaLight-Cpp.zip).*
+*You can use pre-built binaries instead if you prefer, I put them in [AdaLight-Cpp.zip](../AdaLight-Cpp.zip).*
 
 At the point where the guide says to download Processing, instead you will need Visual Studio with the basic C++
 features enabled; you don't need the Windows XP support or MFC libraries for this project. If you don't already
@@ -29,7 +29,7 @@ have Visual Studio installed, you can get a free Community edition from https://
 
 ### Configuring your displays
 
-When you have AdaLight.exe built, look for [Adalight.config.json](./CppDriver/Adalight.config.json) and follow along with
+When you have AdaLight.exe built, look for [Adalight.config.json](./Adalight.config.json) and follow along with
 the comment blocks to make it match your own setup configuration. Pay particular attention to the `displays` member, that's
 where you'll define the layout of your LEDs around the edge of the monitor. Put your customized configuration file in the
 same working directory as AdaLight.exe, then try running AdaLight.exe.
