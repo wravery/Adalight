@@ -29,7 +29,7 @@ have Visual Studio installed, you can get a free Community edition from https://
 
 ### Configuring your displays
 
-When you have AdaLight.exe built, look for [Adalight.config.json](./Adalight.config.json) and follow along with
+When you have AdaLight.exe built, look for [AdaLight.config.json](./AdaLight.config.json) and follow along with
 the comment blocks to make it match your own setup configuration. Pay particular attention to the `displays` member, that's
 where you'll define the layout of your LEDs around the edge of the monitor. Put your customized configuration file in the
 same working directory as AdaLight.exe, then try running AdaLight.exe.
