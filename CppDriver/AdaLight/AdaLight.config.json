@@ -55,5 +55,55 @@
         { "x": 8, "y": 4 }, { "x": 7, "y": 4 }, { "x": 6, "y": 4 }
       ]
     }
+  ],
+
+  // This array contains details for each display the software will process
+  // and send to an OPC (Open Pixel Controller) server. It's similar to the
+  // AdaLight displays array, but it takes additional OPC parameters like
+  // the hostname, port, channel, and pixel index values.
+  "servers": [
+    {
+      "hostName": "192.168.1.14",
+      "port": "80",
+
+      "pixels": [
+        {
+          "channel": 2,
+          "firstPixel": 0,
+          "pixelCount": 83,
+
+          "displays": [
+            {
+              "horizontalCount": 10,
+              "verticalCount": 5,
+
+              "positions": [
+                // Top edge (right to left)
+                { "x": 9, "y": 0 }, { "x": 8, "y": 0 }, { "x": 7, "y": 0 }, { "x": 6, "y": 0 }, { "x": 5, "y": 0 },
+                { "x": 4, "y": 0 }, { "x": 3, "y": 0 }, { "x": 2, "y": 0 }, { "x": 1, "y": 0 }, { "x": 0, "y": 0 }
+              ]
+            }
+          ]
+        },
+
+        {
+          "channel": 2,
+          "firstPixel": 83,
+          "pixelCount": 29,
+
+          "displays": [
+            {
+              "horizontalCount": 10,
+              "verticalCount": 5,
+
+              "positions": [
+                // Left edge (top to bottom)
+                { "x": 0, "y": 0 }, { "x": 0, "y": 1 }, { "x": 0, "y": 2 }, { "x": 0, "y": 3 }, { "x": 0, "y": 4 }
+              ]
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

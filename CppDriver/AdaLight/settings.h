@@ -114,6 +114,79 @@ struct settings
 		//},
 	};
 
+	// Each range of pixels for an OPC server is represented by a channel,
+	// the firstPixel (0-based) index, and a pixelCount. The pixels sampled from
+	// the display will be interpolated with an even distribution over the range
+	// of pixels in the order that they appear in the display configuration.
+	struct opc_pixel_range
+	{
+		uint8_t channel;
+
+		size_t firstPixel;
+		size_t pixelCount;
+
+		std::vector<display_config> displays;
+	};
+
+	// This struct contains details for each display the software will process
+	// and send to an OPC (Open Pixel Controller) server. It's similar to the
+	// AdaLight display_configuration structure, but it takes additional OPC
+	// parameters like the hostname, port, channel, and pixel index values.
+	struct opc_configuration
+	{
+		std::wstring host;
+		std::wstring port;
+
+		std::vector<opc_pixel_range> pixels;
+	};
+
+	std::vector<opc_configuration> servers = {
+		// For this example we're going to map the top and left edges of
+		// a single display to channel 2 on the OPC server listening on port 80
+		// at 192.168.1.14.
+		{
+			L"192.168.1.14",
+			L"80",
+
+			{
+				// The top edge is not proportional to the display in the OPC strip,
+				// the first 83 pixels go from the top right to the top left.
+				{
+					2, 0, 83,
+					{
+						{
+							// Screen 0: 10 LEDs across, 5 LEDs down
+							10, 5,
+							{
+								// Top edge (right to left)
+								{ 9, 0 }, { 8, 0 }, { 7, 0 }, { 6, 0 }, { 5, 0 },
+								{ 4, 0 }, { 3, 0 }, { 2, 0 }, { 1, 0 }, { 0, 0 },
+							}
+						}
+					}
+				},
+
+				// The left edge continues down from the top left corner and reaches
+				// the bottom with 29 pixels. Note the overlap between these edges on the
+				// display, both ranges of pixels end up using the origin in the top-left
+				// corner of the display.
+				{
+					2, 83, 29,
+					{
+						{
+							// Screen 0: 10 LEDs across, 5 LEDs down
+							10, 5,
+							{
+								// Left edge (top to bottom)
+								{ 0, 0 }, { 0, 1 }, { 0, 2 }, { 0, 3 }, { 0, 4 },
+							}
+						}
+					}
+				}
+			}
+		}
+	};
+
 	DWORD minBrightnessColor;
 	size_t totalLedCount;
 	double weight;
