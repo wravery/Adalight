@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 
 struct settings
 {
@@ -114,33 +115,46 @@ struct settings
 		//},
 	};
 
-	// Each range of pixels for an OPC server is represented by a channel,
-	// the firstPixel (0-based) index, and a pixelCount. The pixels sampled from
-	// the display will be interpolated with an even distribution over the range
-	// of pixels in the order that they appear in the display configuration.
+	// Each range of pixels for an OPC (Open Pixel Controller) server is represented
+	// by a channel, the firstPixel (0-based) index, and a pixelCount. The pixels
+	// sampled from the display will be interpolated with an even distribution over
+	// the range of pixels in the order that they appear in displayIndex. The
+	// 2-dimensional vector displayIndex[i][j] maps to the display at index i and
+	// the sub-pixel at index j. That way we don't need to re-define the displays or
+	// get new samples separately for OPC.
 	struct opc_pixel_range
 	{
-		uint8_t channel;
-
 		size_t firstPixel;
 		size_t pixelCount;
 
-		std::vector<display_config> displays;
+		std::vector<std::vector<size_t>> displayIndex;
 	};
 
-	// This struct contains details for each display the software will process
-	// and send to an OPC (Open Pixel Controller) server. It's similar to the
-	// AdaLight display_configuration structure, but it takes additional OPC
-	// parameters like the hostname, port, channel, and pixel index values.
-	struct opc_configuration
+	// Each channel can have multiple ranges. They should not overlap, but if they
+	// do we'll just end up overwriting the overlapping pixels with the later
+	// ranges when we send a complete frame to the OPC server.
+	struct opc_channel
+	{
+		uint8_t channel;
+
+		std::vector<opc_pixel_range> pixels;
+
+		size_t totalSampleCount = 0;
+		size_t totalPixelCount = 0;
+	};
+
+	// OPC server configuration includes the hostname, port (as a string for getaddrinfo)
+	// and a collection of sub-channels and pixel ranges mapped to portions of the AdaLight
+	// display.
+	struct opc_server
 	{
 		std::wstring host;
 		std::wstring port;
 
-		std::vector<opc_pixel_range> pixels;
+		std::vector<opc_channel> channels;
 	};
 
-	std::vector<opc_configuration> servers = {
+	std::vector<opc_server> servers = {
 		// For this example we're going to map the top and left edges of
 		// a single display to channel 2 on the OPC server listening on port 80
 		// at 192.168.1.14.
@@ -149,36 +163,36 @@ struct settings
 			L"80",
 
 			{
-				// The top edge is not proportional to the display in the OPC strip,
-				// the first 83 pixels go from the top right to the top left.
 				{
-					2, 0, 83,
+					// Channel: 2
+					2,
 					{
 						{
-							// Screen 0: 10 LEDs across, 5 LEDs down
-							10, 5,
+							// The top edge is not proportional to the display in the OPC strip,
+							// the first 83 pixels go from the top right to the top left.
+							0, 83,
 							{
-								// Top edge (right to left)
-								{ 9, 0 }, { 8, 0 }, { 7, 0 }, { 6, 0 }, { 5, 0 },
-								{ 4, 0 }, { 3, 0 }, { 2, 0 }, { 1, 0 }, { 0, 0 },
+								// Display: 0
+								{
+									// Top edge (right to left)
+									16, 15, 14, 13, 12,
+									11, 10, 9, 8, 7
+								}
 							}
-						}
-					}
-				},
+						},
 
-				// The left edge continues down from the top left corner and reaches
-				// the bottom with 29 pixels. Note the overlap between these edges on the
-				// display, both ranges of pixels end up using the origin in the top-left
-				// corner of the display.
-				{
-					2, 83, 29,
-					{
 						{
-							// Screen 0: 10 LEDs across, 5 LEDs down
-							10, 5,
+							// The left edge continues down from the top left corner and reaches
+							// the bottom with 29 pixels. Note the overlap between these edges on the
+							// display, both ranges of pixels end up using the origin in the top-left
+							// corner of the display.
+							83, 29,
 							{
-								// Left edge (top to bottom)
-								{ 0, 0 }, { 0, 1 }, { 0, 2 }, { 0, 3 }, { 0, 4 },
+								// Display: 0
+								{
+									// Left edge (top to bottom)
+									7, 6, 5, 4, 3
+								}
 							}
 						}
 					}

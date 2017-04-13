@@ -65,7 +65,7 @@ value& operator<<(value& displayValue, const settings::display_config& display)
 	positionArray = value::array(display.positions.size());
 	std::transform(display.positions.cbegin(), display.positions.cend(), positionArray.as_array().begin(), [](const settings::led_pos& position)
 	{
-		auto positionEntry = value::object(true);
+		value positionEntry;
 
 		positionEntry << position;
 
@@ -79,20 +79,23 @@ const value& operator>>(const value& pixelValue, settings::opc_pixel_range& pixe
 {
 	const auto& pixelObject = pixelValue.as_object();
 
-	pixel.channel = static_cast<uint8_t>(pixelObject.at(U("channel")).as_integer());
 	pixel.firstPixel = static_cast<size_t>(pixelObject.at(U("firstPixel")).as_integer());
 	pixel.pixelCount = static_cast<size_t>(pixelObject.at(U("pixelCount")).as_integer());
 
-	const auto& displayArray = pixelObject.at(U("displays")).as_array();
+	const auto& displayArray = pixelObject.at(U("displayIndex")).as_array();
 
-	pixel.displays.resize(displayArray.size());
-	std::transform(displayArray.cbegin(), displayArray.cend(), pixel.displays.begin(), [](const value& displayEntry)
+	pixel.displayIndex.resize(displayArray.size());
+	std::transform(displayArray.cbegin(), displayArray.cend(), pixel.displayIndex.begin(), [](const value& displayEntry)
 	{
-		settings::display_config display;
+		const auto& indexArray = displayEntry.as_array();
+		std::vector<size_t> index(indexArray.size());
 
-		displayEntry >> display;
+		std::transform(indexArray.cbegin(), indexArray.cend(), index.begin(), [](const value& indexValue)
+		{
+			return indexValue.as_integer();
+		});
 
-		return display;
+		return index;
 	});
 
 	return pixelValue;
@@ -103,36 +106,37 @@ value& operator<<(value& pixelValue, const settings::opc_pixel_range& pixel)
 	pixelValue = value::object(true);
 	auto& pixelObject = pixelValue.as_object();
 
-	pixelObject[U("channel")] = pixel.channel;
 	pixelObject[U("firstPixel")] = pixel.firstPixel;
 	pixelObject[U("pixelCount")] = pixel.pixelCount;
 
-	auto& displayArray = pixelObject[U("displays")];
+	auto& displayArray = pixelObject[U("displayIndex")];
 
-	displayArray = value::array(pixel.displays.size());
-	std::transform(pixel.displays.cbegin(), pixel.displays.cend(), displayArray.as_array().begin(), [](const settings::display_config& display)
+	displayArray = value::array(pixel.displayIndex.size());
+	std::transform(pixel.displayIndex.cbegin(), pixel.displayIndex.cend(), displayArray.as_array().begin(), [](const std::vector<size_t>& index)
 	{
-		auto displayEntry = value::object(true);
+		auto& indexArray = value::array(index.size());
 
-		displayEntry << display;
+		std::transform(index.cbegin(), index.cend(), indexArray.as_array().begin(), [](size_t entry)
+		{
+			return value::number(entry);
+		});
 
-		return displayEntry;
+		return indexArray;
 	});
 
 	return pixelValue;
 }
 
-const value& operator>>(const value& serverValue, settings::opc_configuration& server)
+const value& operator>>(const value& channelValue, settings::opc_channel& channel)
 {
-	const auto& serverObject = serverValue.as_object();
+	const auto& channelObject = channelValue.as_object();
 
-	server.host = serverObject.at(U("host")).as_string();
-	server.port = serverObject.at(U("port")).as_string();
+	channel.channel = static_cast<uint8_t>(channelObject.at(U("channel")).as_integer());
 
-	const auto& pixelArray = serverObject.at(U("pixels")).as_array();
+	const auto& pixelArray = channelObject.at(U("pixels")).as_array();
 
-	server.pixels.resize(pixelArray.size());
-	std::transform(pixelArray.cbegin(), pixelArray.cend(), server.pixels.begin(), [](const value& pixelEntry)
+	channel.pixels.resize(pixelArray.size());
+	std::transform(pixelArray.cbegin(), pixelArray.cend(), channel.pixels.begin(), [](const value& pixelEntry)
 	{
 		settings::opc_pixel_range pixel;
 
@@ -141,10 +145,54 @@ const value& operator>>(const value& serverValue, settings::opc_configuration& s
 		return pixel;
 	});
 
+	return channelValue;
+}
+
+value& operator<<(value& channelValue, const settings::opc_channel& channel)
+{
+	channelValue = value::object(true);
+	auto& channelObject = channelValue.as_object();
+
+	channelObject[U("channel")] = channel.channel;
+
+	auto& pixelArray = channelObject[U("pixels")];
+
+	pixelArray = value::array(channel.pixels.size());
+	std::transform(channel.pixels.cbegin(), channel.pixels.cend(), pixelArray.as_array().begin(), [](const settings::opc_pixel_range& pixel)
+	{
+		value pixelEntry;
+
+		pixelEntry << pixel;
+
+		return pixelEntry;
+	});
+
+	return channelValue;
+}
+
+const value& operator>>(const value& serverValue, settings::opc_server& server)
+{
+	const auto& serverObject = serverValue.as_object();
+
+	server.host = serverObject.at(U("host")).as_string();
+	server.port = serverObject.at(U("port")).as_string();
+
+	const auto& channelArray = serverObject.at(U("channels")).as_array();
+
+	server.channels.resize(channelArray.size());
+	std::transform(channelArray.cbegin(), channelArray.cend(), server.channels.begin(), [](const value& channelEntry)
+	{
+		settings::opc_channel channel;
+
+		channelEntry >> channel;
+
+		return channel;
+	});
+
 	return serverValue;
 }
 
-value& operator<<(value& serverValue, const settings::opc_configuration& server)
+value& operator<<(value& serverValue, const settings::opc_server& server)
 {
 	serverValue = value::object(true);
 	auto& serverObject = serverValue.as_object();
@@ -152,16 +200,16 @@ value& operator<<(value& serverValue, const settings::opc_configuration& server)
 	serverObject[U("host")] = value::string(server.host);
 	serverObject[U("port")] = value::string(server.port);
 
-	auto& pixelArray = serverObject[U("pixels")];
+	auto& channelArray = serverObject[U("channels")];
 
-	pixelArray = value::array(server.pixels.size());
-	std::transform(server.pixels.cbegin(), server.pixels.cend(), pixelArray.as_array().begin(), [](const settings::opc_pixel_range& pixel)
+	channelArray = value::array(server.channels.size());
+	std::transform(server.channels.cbegin(), server.channels.cend(), channelArray.as_array().begin(), [](const settings::opc_channel& channel)
 	{
-		auto pixelEntry = value::object(true);
+		value channelEntry;
 
-		pixelEntry << pixel;
+		channelEntry << channel;
 
-		return pixelEntry;
+		return channelEntry;
 	});
 
 	return serverValue;
@@ -194,7 +242,7 @@ const value& operator>>(const value& settingsValue, settings& settings)
 	settings.servers.resize(serverArray.size());
 	std::transform(serverArray.cbegin(), serverArray.cend(), settings.servers.begin(), [](const value& serverEntry)
 	{
-		settings::opc_configuration server;
+		settings::opc_server server;
 
 		serverEntry >> server;
 
@@ -230,7 +278,7 @@ value& operator<<(value& settingsValue, const settings& settings)
 	auto& serverArray = settingsObject[U("servers")];
 
 	serverArray = value::array(settings.servers.size());
-	std::transform(settings.servers.cbegin(), settings.servers.cend(), serverArray.as_array().begin(), [](const settings::opc_configuration& server)
+	std::transform(settings.servers.cbegin(), settings.servers.cend(), serverArray.as_array().begin(), [](const settings::opc_server& server)
 	{
 		value serverEntry;
 
@@ -281,6 +329,23 @@ settings::settings(const std::wstring& configFilePath)
 			{
 				root << *this;
 				ofs << root;
+			}
+		}
+	}
+
+	for (auto& server : servers)
+	{
+		for (auto& channel : server.channels)
+		{
+			for (auto& pixel : channel.pixels)
+			{
+				channel.totalSampleCount += std::accumulate(pixel.displayIndex.cbegin(), pixel.displayIndex.cend(), size_t(),
+					[](size_t count, const std::vector<size_t>& index)
+				{
+					return count + index.size();
+				});
+
+				channel.totalPixelCount += pixel.pixelCount;
 			}
 		}
 	}

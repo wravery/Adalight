@@ -57,49 +57,41 @@
     }
   ],
 
-  // This array contains details for each display the software will process
-  // and send to an OPC (Open Pixel Controller) server. It's similar to the
-  // AdaLight displays array, but it takes additional OPC parameters like
-  // the hostname, port, channel, and pixel index values.
+  // OPC server configuration includes the hostname, port (as a string for getaddrinfo)
+  // and a collection of sub-channels and pixel ranges mapped to portions of the AdaLight
+  // display. Each range of pixels for an OPC (Open Pixel Controller) server is represented
+  // by a channel, the firstPixel (0-based) index, and a pixelCount. The pixels sampled
+  // from the display will be interpolated with an even distribution over the range of
+  // pixels in the order that they appear in displayIndex. The 2-dimensional array
+  // displayIndex[i][j] maps to the display at index i and the sub-pixel at index j. That
+  // way we don't need to re-define the displays or get new samples separately for OPC.
   "servers": [
     {
       "host": "192.168.1.14",
       "port": "80",
-
-      "pixels": [
+      "channels": [
         {
           "channel": 2,
-          "firstPixel": 0,
-          "pixelCount": 83,
-
-          "displays": [
+          "pixels": [
             {
-              "horizontalCount": 10,
-              "verticalCount": 5,
+              // The top edge is not proportional to the display in the OPC strip,
+              // the first 83 pixels go from the top right to the top left.
+              "firstPixel": 0,
+              "pixelCount": 83,
 
-              "positions": [
-                // Top edge (right to left)
-                { "x": 9, "y": 0 }, { "x": 8, "y": 0 }, { "x": 7, "y": 0 }, { "x": 6, "y": 0 }, { "x": 5, "y": 0 },
-                { "x": 4, "y": 0 }, { "x": 3, "y": 0 }, { "x": 2, "y": 0 }, { "x": 1, "y": 0 }, { "x": 0, "y": 0 }
-              ]
-            }
-          ]
-        },
-
-        {
-          "channel": 2,
-          "firstPixel": 83,
-          "pixelCount": 29,
-
-          "displays": [
+              // Top edge (right to left)
+              "displayIndex": [ [ 16, 15, 14, 13, 12, 11, 10, 9, 8, 7 ] ]
+            },
             {
-              "horizontalCount": 10,
-              "verticalCount": 5,
+              // The left edge continues down from the top left corner and reaches
+              // the bottom with 29 pixels. Note the overlap between these edges on the
+              // display, both ranges of pixels end up using the origin (0, 0) in the
+              // top-left corner of the display.
+              "firstPixel": 83,
+              "pixelCount": 29,
 
-              "positions": [
-                // Left edge (top to bottom)
-                { "x": 0, "y": 0 }, { "x": 0, "y": 1 }, { "x": 0, "y": 2 }, { "x": 0, "y": 3 }, { "x": 0, "y": 4 }
-              ]
+              // Left edge (top to bottom)
+              "displayIndex": [ [ 7, 6, 5, 4, 3 ] ]
             }
           ]
         }

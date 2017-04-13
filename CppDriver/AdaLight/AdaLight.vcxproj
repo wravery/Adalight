@@ -150,6 +150,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gamma_correction.h" />
+    <ClInclude Include="opc_buffer.h" />
     <ClInclude Include="screen_samples.h" />
     <ClInclude Include="serial_buffer.h" />
     <ClInclude Include="serial_port.h" />
@@ -161,6 +162,7 @@
   <ItemGroup>
     <ClCompile Include="AdaLight.cpp" />
     <ClCompile Include="gamma_correction.cpp" />
+    <ClCompile Include="opc_buffer.cpp" />
     <ClCompile Include="screen_samples.cpp" />
     <ClCompile Include="serial_buffer.cpp" />
     <ClCompile Include="serial_port.cpp" />
