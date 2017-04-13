@@ -69,9 +69,11 @@
     {
       "host": "192.168.1.14",
       "port": "80",
+
       "channels": [
         {
           "channel": 2,
+
           "pixels": [
             {
               // The top edge is not proportional to the display in the OPC strip,
