@@ -240,15 +240,14 @@ value& operator<<(value& settingsValue, const settings& settings)
 	return settingsValue;
 }
 
-settings::settings(std::wstring&& configFilePath)
-	: _configFilePath(std::move(configFilePath))
+settings::settings(const std::wstring& configFilePath)
 {
 	auto root = value::null();
 
 	// Read the config file if we have one, otherwise use the default values.
-	if (!_configFilePath.empty())
+	if (!configFilePath.empty())
 	{
-		utility::ifstream_t ifs(_configFilePath);
+		utility::ifstream_t ifs(configFilePath);
 
 		if (ifs.is_open())
 		{
@@ -272,7 +271,7 @@ settings::settings(std::wstring&& configFilePath)
 		if (root.is_null())
 		{
 			// Write the current values back out to the config file for customization.
-			utility::ofstream_t ofs(_configFilePath, std::ios::out | std::ios::trunc);
+			utility::ofstream_t ofs(configFilePath, std::ios::trunc);
 
 			if (ofs.is_open())
 			{

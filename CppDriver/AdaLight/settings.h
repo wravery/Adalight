@@ -9,7 +9,7 @@ struct settings
 	// included AdaLight.config.json for an example and a starting point. If the config file
 	// does not exist we'll use the default values in this header and save them out to
 	// Adalight.config.json for customization.
-	settings(std::wstring&& configFilePath);
+	settings(const std::wstring& configFilePath);
 
 	// Minimum LED brightness; some users prefer a small amount of backlighting
 	// at all times, regardless of screen content. Higher values are brighter,
@@ -191,7 +191,4 @@ struct settings
 	size_t totalLedCount;
 	double weight;
 	UINT delay;
-
-private:
-	const std::wstring _configFilePath;
 };
