@@ -345,7 +345,8 @@ settings::settings(const std::wstring& configFilePath)
 					return count + index.size();
 				});
 
-				channel.totalPixelCount += pixel.pixelCount;
+				// The frame covers all of the pixels up to the highest index.
+				channel.totalPixelCount = std::max<size_t>(channel.totalPixelCount, pixel.firstPixel + pixel.pixelCount);
 			}
 		}
 	}

@@ -345,7 +345,7 @@ bool screen_samples::take_samples(serial_buffer& serial)
 			const uint8_t ledG = static_cast<uint8_t>(g);
 			const uint8_t ledB = static_cast<uint8_t>(b);
 
-			*(previousColor++) = (ledB << 24) | (ledG << 16) | (ledR << 8) | 0xFF;
+			*(previousColor++) = (ledR << 24) | (ledG << 16) | (ledB << 8) | 0xFF;
 
 			// Write the _gamma corrected values to the serial data.
 			*(output++) = _gamma.red(ledR);
