@@ -85,6 +85,7 @@ const value& operator>>(const value& pixelValue, settings::opc_pixel_range& pixe
 
 	const auto& displayArray = pixelObject.at(U("displays")).as_array();
 
+	pixel.displays.resize(displayArray.size());
 	std::transform(displayArray.cbegin(), displayArray.cend(), pixel.displays.begin(), [](const value& displayEntry)
 	{
 		settings::display_config display;
@@ -130,6 +131,7 @@ const value& operator>>(const value& serverValue, settings::opc_configuration& s
 
 	const auto& pixelArray = serverObject.at(U("pixels")).as_array();
 
+	server.pixels.resize(pixelArray.size());
 	std::transform(pixelArray.cbegin(), pixelArray.cend(), server.pixels.begin(), [](const value& pixelEntry)
 	{
 		settings::opc_pixel_range pixel;
@@ -266,6 +268,8 @@ settings::settings(const std::wstring& configFilePath)
 				// reset root to a null value and continue
 				root = value::null();
 			}
+
+			ifs.close();
 		}
 
 		if (root.is_null())
