@@ -9,7 +9,7 @@
 
 #include "settings.h"
 #include "gamma_correction.h"
-#include "serial_buffer.h"
+#include "pixel_buffer.h"
 
 _COM_SMARTPTR_TYPEDEF(IDXGIFactory1, __uuidof(IDXGIFactory1));
 _COM_SMARTPTR_TYPEDEF(IDXGIAdapter1, __uuidof(IDXGIAdapter1));
@@ -27,7 +27,9 @@ public:
 	screen_samples(const settings& parameters, const gamma_correction& gamma);
 
 	bool create_resources();
-	bool take_samples(serial_buffer& serial);
+	bool take_samples();
+	bool render_serial(serial_buffer& serial) const;
+	bool render_channel(const settings::opc_channel, pixel_buffer& pixels) const;
 	void free_resources();
 
 	bool empty() const;
@@ -59,7 +61,7 @@ private:
 	IDXGIFactory1Ptr _factory;
 	std::vector<display_resources> _displays;
 	std::vector<std::vector<offset_array>> _pixelOffsets;
-	std::vector<DWORD> _previousColors;
+	std::vector<uint32_t> _previousColors;
 	bool _acquiredResources = false;
 	size_t _frameCount = 0;
 	ULONGLONG _startTick = 0;

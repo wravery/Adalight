@@ -27,9 +27,6 @@
     <ClInclude Include="settings.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="serial_buffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="screen_samples.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -39,7 +36,7 @@
     <ClInclude Include="update_timer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="opc_buffer.h">
+    <ClInclude Include="pixel_buffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -56,9 +53,6 @@
     <ClCompile Include="settings.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="serial_buffer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="screen_samples.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -68,7 +62,7 @@
     <ClCompile Include="update_timer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="opc_buffer.cpp">
+    <ClCompile Include="pixel_buffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

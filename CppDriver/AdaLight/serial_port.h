@@ -5,7 +5,7 @@
 #include <tuple>
 
 #include "settings.h"
-#include "serial_buffer.h"
+#include "pixel_buffer.h"
 
 class serial_port
 {

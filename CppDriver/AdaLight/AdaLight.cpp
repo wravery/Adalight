@@ -48,7 +48,7 @@
 
 #include "settings.h"
 #include "gamma_correction.h"
-#include "serial_buffer.h"
+#include "pixel_buffer.h"
 #include "screen_samples.h"
 #include "serial_port.h"
 #include "update_timer.h"
@@ -85,8 +85,10 @@ static std::shared_ptr<update_timer> get_timer()
 				}
 			}
 
+			samples.take_samples();
+
 			// Update the LED strip.
-			samples.take_samples(serial);
+			samples.render_serial(serial);
 			port.send(serial);
 		}, [](std::shared_ptr<update_timer> /*timer*/)
 		{

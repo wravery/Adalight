@@ -172,7 +172,7 @@ bool screen_samples::create_resources()
 	return true;
 }
 
-bool screen_samples::take_samples(serial_buffer& serial)
+bool screen_samples::take_samples()
 {
 	if (!_acquiredResources)
 	{
@@ -225,7 +225,6 @@ bool screen_samples::take_samples(serial_buffer& serial)
 		}
 	}
 
-	auto output = serial.begin();
 	auto previousColor = _previousColors.begin();
 
 	for (size_t i = 0; i < _displays.size(); ++i)
@@ -306,9 +305,9 @@ bool screen_samples::take_samples(serial_buffer& serial)
 			// Average in the previous color if fading is enabled.
 			if (_parameters.fade > 0.0)
 			{
-				r = (r * _parameters.weight) + (static_cast<double>((*previousColor & 0xFF000000) >> 24) * _parameters.fade);
-				g = (g * _parameters.weight) + (static_cast<double>((*previousColor & 0xFF0000) >> 16) * _parameters.fade);
-				b = (b * _parameters.weight) + (static_cast<double>((*previousColor & 0xFF00) >> 8) * _parameters.fade);
+				r = (r * _parameters.weight) + (static_cast<double>((*previousColor >> 24) & 0xFF) * _parameters.fade);
+				g = (g * _parameters.weight) + (static_cast<double>((*previousColor >> 16) & 0xFF) * _parameters.fade);
+				b = (b * _parameters.weight) + (static_cast<double>((*previousColor >> 8) & 0xFF) * _parameters.fade);
 			}
 
 			const double minBrightness = static_cast<double>(_parameters.minBrightness);
@@ -345,16 +344,47 @@ bool screen_samples::take_samples(serial_buffer& serial)
 			const uint8_t ledG = static_cast<uint8_t>(g);
 			const uint8_t ledB = static_cast<uint8_t>(b);
 
-			*(previousColor++) = (ledR << 24) | (ledG << 16) | (ledB << 8) | 0xFF;
-
-			// Write the _gamma corrected values to the serial data.
-			*(output++) = _gamma.red(ledR);
-			*(output++) = _gamma.green(ledG);
-			*(output++) = _gamma.blue(ledB);
+			*(previousColor++) = ((ledR << 24) | (ledG << 16) | (ledB << 8) | 0xFF);
 		}
 	}
 
 	++_frameCount;
+
+	return true;
+}
+
+bool screen_samples::render_serial(serial_buffer& serial) const
+{
+	serial.clear();
+
+	if (!_acquiredResources)
+	{
+		return false;
+	}
+
+	for (auto pixel : _previousColors)
+	{
+		const uint8_t gammaR = _gamma.red(static_cast<uint8_t>((pixel >> 24) & 0xFF));
+		const uint8_t gammaG = _gamma.green(static_cast<uint8_t>((pixel >> 16) & 0xFF));
+		const uint8_t gammaB = _gamma.blue(static_cast<uint8_t>((pixel >> 8) & 0xFF));
+
+		// Write the gamma corrected values to the serial data.
+		serial << ((gammaR << 24) | (gammaG << 16) | (gammaB << 8) | 0xFF);
+	}
+
+	return true;
+}
+
+bool screen_samples::render_channel(const settings::opc_channel, pixel_buffer& pixels) const
+{
+	pixels.clear();
+
+	if (!_acquiredResources)
+	{
+		return false;
+	}
+
+	// Map the pixel ranges for this channel back to the previousColor values calculated for the last snapshot
 
 	return true;
 }
