@@ -174,6 +174,7 @@ const value& operator>>(const value& serverValue, settings::opc_server& server)
 
 	server.host = serverObject.at(U("host")).as_string();
 	server.port = serverObject.at(U("port")).as_string();
+	server.alphaChannel = serverObject.at(U("alphaChannel")).as_bool();
 
 	const auto& channelArray = serverObject.at(U("channels")).as_array();
 
@@ -197,6 +198,7 @@ value& operator<<(value& serverValue, const settings::opc_server& server)
 
 	serverObject[U("host")] = value::string(server.host);
 	serverObject[U("port")] = value::string(server.port);
+	serverObject[U("alphaChannel")] = server.alphaChannel;
 
 	auto& channelArray = serverObject[U("channels")];
 

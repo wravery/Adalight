@@ -153,6 +153,7 @@ struct settings
 	{
 		std::wstring host;
 		std::wstring port;
+		bool alphaChannel;
 
 		std::vector<opc_channel> channels;
 	};
@@ -161,9 +162,11 @@ struct settings
 		// For this example we're going to map the top and left edges of
 		// a single display to channel 2 on the OPC server listening on port 80
 		// at 192.168.1.14.
+
 		{
 			L"192.168.1.14",
 			L"80",
+			false,
 
 			{
 				{
@@ -174,6 +177,7 @@ struct settings
 						// the first 83 pixels go from the top right to the top left. There's
 						// also a 4 pixel gap between the first 64 pixels and the last 19,
 						// so we need to divide that into 3 ranges.
+
 						{
 							// Top edge (right to left)
 							64,
@@ -206,6 +210,7 @@ struct settings
 						// the bottom with 29 pixels. Note the overlap between these edges on the
 						// display, both ranges of pixels end up using the origin in the top-left
 						// corner of the display.
+
 						{
 							// Left edge (top to bottom)
 							29,

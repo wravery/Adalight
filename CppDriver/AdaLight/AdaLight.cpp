@@ -103,10 +103,12 @@ static std::shared_ptr<update_timer> get_timer()
 
 				for (const auto& channel : server.channels)
 				{
-					opc_buffer buffer(channel);
+					std::unique_ptr<pixel_buffer> buffer(server.alphaChannel
+						? static_cast<pixel_buffer*>(new bob_buffer(channel))
+						: static_cast<pixel_buffer*>(new opc_buffer(channel)));
 
-					samples.render_channel(channel, buffer);
-					pool.send(i, buffer);
+					samples.render_channel(channel, *buffer);
+					pool.send(i, *buffer);
 				}
 			}
 		}, [](std::shared_ptr<update_timer> /*timer*/)

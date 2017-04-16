@@ -72,6 +72,7 @@
     {
       "host": "192.168.1.14",
       "port": "80",
+      "alphaChannel": false,
 
       "channels": [
         {
