@@ -1,6 +1,9 @@
 #include "stdafx.h"
 #include "screen_samples.h"
 
+#include <cmath>
+#include <algorithm>
+
 #ifdef _DEBUG
 #include <string>
 #include <sstream>
@@ -110,9 +113,8 @@ bool screen_samples::create_resources()
 	constexpr size_t pixel_samples = 16;
 	static_assert(pixel_samples * pixel_samples == offset_array().size(), "size mismatch!");
 
-	_pixelOffsets.resize(_displays.size());
-
 	// Calculate the sub-sampled pixel offsets
+	_pixelOffsets.resize(_displays.size());
 	for (size_t i = 0; i < _displays.size(); ++i)
 	{
 		const auto& display = _parameters.displays[i];
@@ -149,6 +151,31 @@ bool screen_samples::create_resources()
 
 					offsets[pixelIndex] = { x[col], y[row] };
 				}
+			}
+		}
+	}
+
+	// Calculate the pixel weights for the samples spread over each OPC channel
+	_pixelWeights.resize(_parameters.servers.size());
+	for (size_t i = 0; i < _parameters.servers.size(); ++i)
+	{
+		const auto& server = _parameters.servers[i];
+
+		_pixelWeights[i].resize(server.channels.size());
+		for (size_t j = 0; j < server.channels.size(); ++j)
+		{
+			const auto& channel = server.channels[j];
+			const auto interval = static_cast<double>(channel.totalPixelCount) / static_cast<double>(channel.totalSampleCount);
+
+			_pixelWeights[i][j].resize(channel.totalPixelCount);
+			for (size_t k = 0; k < channel.totalPixelCount; ++k)
+			{
+				const size_t offset = (k * channel.totalSampleCount) / channel.totalPixelCount;
+				const double weight = k > 0 && k < channel.totalPixelCount - 1 && channel.totalPixelCount > channel.totalSampleCount
+					? 1.0
+					: 1.0;
+
+				_pixelWeights[i][j][k] = { offset, weight };
 			}
 		}
 	}
@@ -375,7 +402,7 @@ bool screen_samples::render_serial(serial_buffer& serial) const
 	return true;
 }
 
-bool screen_samples::render_channel(const settings::opc_channel, pixel_buffer& pixels) const
+bool screen_samples::render_channel(const settings::opc_channel& channel, pixel_buffer& pixels) const
 {
 	pixels.clear();
 
@@ -384,7 +411,34 @@ bool screen_samples::render_channel(const settings::opc_channel, pixel_buffer& p
 		return false;
 	}
 
-	// Map the pixel ranges for this channel back to the previousColor values calculated for the last snapshot
+	// Map the pixel ranges for this channel back to the previousColor values from the last snapshot.
+	for (const auto& range : channel.pixels)
+	{
+		for (size_t pixelIndex = 0; pixelIndex < range.pixelCount; ++pixelIndex)
+		{
+			uint32_t pixelColor = 0;
+			size_t display = 0;
+			size_t pixelOffset = (pixelIndex * range.sampleCount) / range.pixelCount;
+			size_t previousColorIndex = 0;
+
+			while (display < range.displayIndex.size()
+				&& pixelOffset >= range.displayIndex[display].size())
+			{
+				pixelOffset -= range.displayIndex[display].size();
+				previousColorIndex += _pixelOffsets[display].size();
+				++display;
+			}
+
+			if (display < range.displayIndex.size())
+			{
+				previousColorIndex += range.displayIndex[display][pixelOffset];
+				pixelColor = _previousColors[previousColorIndex];
+			}
+
+			// Write the pixel value to the message buffer.
+			pixels << pixelColor;
+		}
+	}
 
 	return true;
 }
@@ -407,6 +461,7 @@ void screen_samples::free_resources()
 
 	_displays.clear();
 	_pixelOffsets.clear();
+	_pixelWeights.clear();
 
 	if (_startTick > 0)
 	{

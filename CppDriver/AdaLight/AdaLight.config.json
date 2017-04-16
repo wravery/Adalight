@@ -60,11 +60,14 @@
   // OPC server configuration includes the hostname, port (as a string for getaddrinfo)
   // and a collection of sub-channels and pixel ranges mapped to portions of the AdaLight
   // display. Each range of pixels for an OPC (Open Pixel Controller) server is represented
-  // by a channel, the firstPixel (0-based) index, and a pixelCount. The pixels sampled
-  // from the display will be interpolated with an even distribution over the range of
-  // pixels in the order that they appear in displayIndex. The 2-dimensional array
-  // displayIndex[i][j] maps to the display at index i and the sub-pixel at index j. That
-  // way we don't need to re-define the displays or get new samples separately for OPC.
+	// by a channel and a pixelCount. Ranges are contiguous starting at 0 for each channel,
+	// so to leave a gap in the channel you would create a range of pixels which don't map to
+  // any LEDs. The pixels sampled from the display will be interpolated with an even
+  // distribution over the range of pixels in the order that they appear in displayIndex.
+  // The 2-dimensional array displayIndex[i][j] maps to the display at index i and the
+  // sub-pixel at index j. That way we don't need to re-define the displays or get new
+  // samples separately for OPC, we can just take samples and then re-render those samples
+	// to both the AdaLight over a serial port and the OPC server over TCP/IP.
   "servers": [
     {
       "host": "192.168.1.14",
@@ -78,7 +81,6 @@
             {
               // The top edge is not proportional to the display in the OPC strip,
               // the first 83 pixels go from the top right to the top left.
-              "firstPixel": 0,
               "pixelCount": 83,
 
               // Top edge (right to left)
@@ -89,7 +91,6 @@
               // the bottom with 29 pixels. Note the overlap between these edges on the
               // display, both ranges of pixels end up using the origin (0, 0) in the
               // top-left corner of the display.
-              "firstPixel": 83,
               "pixelCount": 29,
 
               // Left edge (top to bottom)

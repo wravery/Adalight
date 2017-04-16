@@ -29,7 +29,7 @@ public:
 	bool create_resources();
 	bool take_samples();
 	bool render_serial(serial_buffer& serial) const;
-	bool render_channel(const settings::opc_channel, pixel_buffer& pixels) const;
+	bool render_channel(const settings::opc_channel& channel, pixel_buffer& pixels) const;
 	void free_resources();
 
 	bool empty() const;
@@ -56,11 +56,18 @@ private:
 
 	typedef std::array<pixel_offset, 256> offset_array;
 
+	struct pixel_weight
+	{
+		size_t offset;
+		double weight;
+	};
+
 	const settings& _parameters;
 	const gamma_correction& _gamma;
 	IDXGIFactory1Ptr _factory;
 	std::vector<display_resources> _displays;
 	std::vector<std::vector<offset_array>> _pixelOffsets;
+	std::vector<std::vector<std::vector<pixel_weight>>> _pixelWeights;
 	std::vector<uint32_t> _previousColors;
 	bool _acquiredResources = false;
 	size_t _frameCount = 0;

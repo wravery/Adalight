@@ -79,7 +79,6 @@ const value& operator>>(const value& pixelValue, settings::opc_pixel_range& pixe
 {
 	const auto& pixelObject = pixelValue.as_object();
 
-	pixel.firstPixel = static_cast<size_t>(pixelObject.at(U("firstPixel")).as_integer());
 	pixel.pixelCount = static_cast<size_t>(pixelObject.at(U("pixelCount")).as_integer());
 
 	const auto& displayArray = pixelObject.at(U("displayIndex")).as_array();
@@ -106,7 +105,6 @@ value& operator<<(value& pixelValue, const settings::opc_pixel_range& pixel)
 	pixelValue = value::object(true);
 	auto& pixelObject = pixelValue.as_object();
 
-	pixelObject[U("firstPixel")] = pixel.firstPixel;
 	pixelObject[U("pixelCount")] = pixel.pixelCount;
 
 	auto& displayArray = pixelObject[U("displayIndex")];
@@ -221,7 +219,7 @@ const value& operator>>(const value& settingsValue, settings& settings)
 
 	settings.minBrightness = static_cast<uint8_t>(settingsObject.at(U("minBrightness")).as_integer());
 	settings.fade = settingsObject.at(U("fade")).as_double();
-	settings.timeout = static_cast<DWORD>(settingsObject.at(U("timeout")).as_integer());
+	settings.timeout = static_cast<uint32_t>(settingsObject.at(U("timeout")).as_integer());
 	settings.fpsMax = static_cast<UINT>(settingsObject.at(U("fpsMax")).as_integer());
 	settings.throttleTimer = static_cast<UINT>(settingsObject.at(U("throttleTimer")).as_integer());
 
@@ -339,14 +337,14 @@ settings::settings(const std::wstring& configFilePath)
 		{
 			for (auto& pixel : channel.pixels)
 			{
-				channel.totalSampleCount += std::accumulate(pixel.displayIndex.cbegin(), pixel.displayIndex.cend(), size_t(),
+				pixel.sampleCount = std::accumulate(pixel.displayIndex.cbegin(), pixel.displayIndex.cend(), size_t(),
 					[](size_t count, const std::vector<size_t>& index)
 				{
 					return count + index.size();
 				});
 
-				// The frame covers all of the pixels up to the highest index.
-				channel.totalPixelCount = std::max<size_t>(channel.totalPixelCount, pixel.firstPixel + pixel.pixelCount);
+				channel.totalSampleCount += pixel.sampleCount;
+				channel.totalPixelCount += pixel.pixelCount;
 			}
 		}
 	}
