@@ -78,19 +78,34 @@
           "channel": 2,
 
           "pixels": [
+            // The top edge is not proportional to the display in the OPC strip,
+            // the first 83 pixels go from the top right to the top left. There's
+            // also a 4 pixel gap between the first 64 pixels and the last 19,
+            // so we need to divide that into 3 ranges.
             {
-              // The top edge is not proportional to the display in the OPC strip,
-              // the first 83 pixels go from the top right to the top left.
-              "pixelCount": 83,
+              "pixelCount": 64,
 
               // Top edge (right to left)
-              "displayIndex": [ [ 16, 15, 14, 13, 12, 11, 10, 9, 8, 7 ] ]
+              "displayIndex": [ [ 16, 15, 14, 13, 12, 11, 10, 9 ] ]
             },
             {
-              // The left edge continues down from the top left corner and reaches
-              // the bottom with 29 pixels. Note the overlap between these edges on the
-              // display, both ranges of pixels end up using the origin (0, 0) in the
-              // top-left corner of the display.
+              "pixelCount": 4,
+
+              // Top edge (gap)
+              "displayIndex": []
+            },
+            {
+              "pixelCount": 19,
+
+              // Top edge (right to left)
+              "displayIndex": [ [ 8, 7 ] ]
+            },
+
+            // The left edge continues down from the top left corner and reaches
+            // the bottom with 29 pixels. Note the overlap between these edges on the
+            // display, both ranges of pixels end up using the origin (0, 0) in the
+            // top-left corner of the display.
+            {
               "pixelCount": 29,
 
               // Left edge (top to bottom)

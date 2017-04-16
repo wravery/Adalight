@@ -170,30 +170,48 @@ struct settings
 					// Channel: 2
 					2,
 					{
+						// The top edge is not proportional to the display in the OPC strip,
+						// the first 83 pixels go from the top right to the top left. There's
+						// also a 4 pixel gap between the first 64 pixels and the last 19,
+						// so we need to divide that into 3 ranges.
 						{
-							// The top edge is not proportional to the display in the OPC strip,
-							// the first 83 pixels go from the top right to the top left.
-							83,
+							// Top edge (right to left)
+							64,
 							{
-								// Display: 0
 								{
-									// Top edge (right to left)
+									// Display: 0
 									16, 15, 14, 13, 12,
-									11, 10, 9, 8, 7
+									11, 10, 9
 								}
 							}
 						},
 
 						{
-							// The left edge continues down from the top left corner and reaches
-							// the bottom with 29 pixels. Note the overlap between these edges on the
-							// display, both ranges of pixels end up using the origin in the top-left
-							// corner of the display.
+							// Top edge (gap)
+							4, {}
+						},
+
+						{
+							// Top edge (right to left)
+							19,
+							{
+								{
+									// Display: 0
+									8, 7
+								}
+							}
+						},
+
+						// The left edge continues down from the top left corner and reaches
+						// the bottom with 29 pixels. Note the overlap between these edges on the
+						// display, both ranges of pixels end up using the origin in the top-left
+						// corner of the display.
+						{
+							// Left edge (top to bottom)
 							29,
 							{
-								// Display: 0
 								{
-									// Left edge (top to bottom)
+									// Display: 0
 									7, 6, 5, 4, 3
 								}
 							}

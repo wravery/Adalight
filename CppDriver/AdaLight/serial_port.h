@@ -1,7 +1,5 @@
 #pragma once
 
-#include <windows.h>
-
 #include <tuple>
 
 #include "settings.h"
@@ -13,7 +11,7 @@ public:
 	serial_port(const settings& parameters);
 
 	bool open();
-	bool send(const serial_buffer& buffer);
+	bool send(const pixel_buffer& buffer);
 	void close();
 
 private:

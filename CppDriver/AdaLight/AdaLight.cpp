@@ -51,6 +51,7 @@
 #include "pixel_buffer.h"
 #include "screen_samples.h"
 #include "serial_port.h"
+#include "opc_pool.h"
 #include "update_timer.h"
 
 static const settings parameters(L"AdaLight.config.json");
@@ -59,6 +60,7 @@ static serial_buffer serial(parameters);
 static gamma_correction gamma;
 static screen_samples samples(parameters, gamma);
 static serial_port port(parameters);
+static opc_pool pool(parameters);
 
 // Construct an update_timer and keep a std::weak_ptr to it for re-use as long as it's alive.
 static std::shared_ptr<update_timer> get_timer()
@@ -74,7 +76,10 @@ static std::shared_ptr<update_timer> get_timer()
 			// Try to get the resources and resume the timer.
 			if (samples.empty())
 			{
-				if (port.open()
+				const bool portOpened = port.open();
+				const bool poolOpened = pool.open();
+
+				if ((portOpened || poolOpened)
 					&& samples.create_resources())
 				{
 					timer->resume();
@@ -90,6 +95,20 @@ static std::shared_ptr<update_timer> get_timer()
 			// Update the LED strip.
 			samples.render_serial(serial);
 			port.send(serial);
+
+			// Send the OPC frames to the server(s).
+			for (size_t i = 0; i < parameters.servers.size(); ++i)
+			{
+				const auto& server = parameters.servers[i];
+
+				for (const auto& channel : server.channels)
+				{
+					opc_buffer buffer(channel);
+
+					samples.render_channel(channel, buffer);
+					pool.send(i, buffer);
+				}
+			}
 		}, [](std::shared_ptr<update_timer> /*timer*/)
 		{
 			// Reset the LED strip.
@@ -99,6 +118,7 @@ static std::shared_ptr<update_timer> get_timer()
 			// Free resources anytime the update timer stops completely.
 			samples.free_resources();
 			port.close();
+			pool.close();
 		});
 
 		weakTimer = timer;

@@ -140,7 +140,7 @@ bool serial_port::open()
 	return INVALID_HANDLE_VALUE != _portHandle;
 }
 
-bool serial_port::send(const serial_buffer& buffer)
+bool serial_port::send(const pixel_buffer& buffer)
 {
 	if (INVALID_HANDLE_VALUE == _portHandle)
 	{

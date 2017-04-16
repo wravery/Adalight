@@ -10,8 +10,9 @@
 #include <stdio.h>
 #include <tchar.h>
 
+#include <winsock2.h>
+#include <WS2tcpip.h>
 #include <comdef.h>
-#include <windows.h>
 #include <WtsApi32.h>
 #include <d3d11.h>
 #include <dxgi1_2.h>

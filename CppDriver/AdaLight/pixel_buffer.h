@@ -46,7 +46,6 @@ private:
 	vector_type make_header(const settings& parameters);
 };
 
-
 struct opc_buffer
 	: public pixel_buffer
 {
@@ -55,7 +54,6 @@ struct opc_buffer
 private:
 	vector_type make_header(const settings::opc_channel& channel);
 };
-
 
 struct bob_buffer
 	: public pixel_buffer
