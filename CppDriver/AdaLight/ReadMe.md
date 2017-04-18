@@ -21,7 +21,7 @@ with the same serial protocol as the Processing script referenced in the guide, 
 
 ### Building the CppDriver project
 
-*You can use pre-built binaries instead if you prefer, I put them in [AdaLight-Cpp.zip](../AdaLight-Cpp.zip).*
+*You can use pre-built binaries instead if you prefer, I put them in [AdaLight-Cpp.zip](../AdaLight-Cpp.zip). To run these binaries on a system that does not have Visual Studio 2015 installed, you will need to install the [Visual C++ 2015 Redistributable Packages (x86 version)](https://www.microsoft.com/en-us/download/details.aspx?id=48145).*
 
 At the point where the guide says to download Processing, instead you will need Visual Studio with the basic C++
 features enabled; you don't need the Windows XP support or MFC libraries for this project. If you don't already
