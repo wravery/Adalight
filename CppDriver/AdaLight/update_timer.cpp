@@ -42,15 +42,18 @@ bool update_timer::start()
 		{
 			bool stopped = false;
 			std::unique_lock<std::timed_mutex> timerLock(timer->_timerMutex, std::defer_lock);
+			auto started = std::chrono::high_resolution_clock::now();
 
 			while (!stopped)
 			{
 				const auto delay = std::chrono::milliseconds(timer->_timerThrottled
 					? timer->_parameters.throttleTimer
 					: timer->_parameters.delay);
+				const auto until = started + delay;
 
 				// This should always timeout as long as the _timerMutex is locked by the main thread.
-				stopped = timerLock.try_lock_for(delay);
+				stopped = timerLock.try_lock_until(until);
+				started = std::chrono::high_resolution_clock::now();
 
 				std::unique_lock<std::mutex> workerLock(timer->_workerMutex);
 

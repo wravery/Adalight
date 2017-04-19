@@ -67,7 +67,6 @@ private:
 	IDXGIFactory1Ptr _factory;
 	std::vector<display_resources> _displays;
 	std::vector<std::vector<offset_array>> _pixelOffsets;
-	std::vector<std::vector<std::vector<pixel_weight>>> _pixelWeights;
 	std::vector<uint32_t> _previousColors;
 	bool _acquiredResources = false;
 	size_t _frameCount = 0;

@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <numeric>
+#include <cmath>
 #include <iostream>
 #include <fstream>
 #include <cpprest/json.h>
@@ -344,6 +345,40 @@ settings::settings(const std::wstring& configFilePath)
 				{
 					return count + index.size();
 				});
+
+				// It's not worth applying the blur if we don't have at least 3 pixels to average each sample.
+				if (pixel.sampleCount > 1 && pixel.pixelCount >= 3 * pixel.sampleCount)
+				{
+					// Build the 1 dimensional Gaussian kernel for this range. The standard deviation term plugged into
+					// the Gaussian function is 1/3 of the radius since the curve approaches 0 beyond 3 standard deviations.
+					pixel.kernelRadius = pixel.pixelCount / (2 * pixel.sampleCount);
+
+					const size_t samples = (2 * pixel.kernelRadius) + 1;
+					const double denominator = static_cast<double>(pixel.kernelRadius * pixel.kernelRadius) / 4.5;
+					double total = 1.0;
+
+					// The midpoint is always 1.
+					pixel.kernelWeights.resize(samples);
+					pixel.kernelWeights[pixel.kernelRadius] = 1.0;
+
+					// We only need to compute the first half, the second half is a mirror of those values.
+					for (size_t x = 0; x < pixel.kernelRadius; ++x)
+					{
+						const double diff = static_cast<double>(x) - static_cast<double>(pixel.kernelRadius);
+						const double weight = std::exp(-(diff * diff) / denominator);
+
+						// Set the weight on both sides of the curve.
+						total += 2.0 * weight;
+						pixel.kernelWeights[x] = weight;
+						pixel.kernelWeights[samples - x - 1] = weight;
+					}
+
+					// Normalize the weights so the area under the curve is 1.
+					for (auto& weight : pixel.kernelWeights)
+					{
+						weight /= total;
+					}
+				}
 
 				channel.totalSampleCount += pixel.sampleCount;
 				channel.totalPixelCount += pixel.pixelCount;

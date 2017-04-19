@@ -155,31 +155,6 @@ bool screen_samples::create_resources()
 		}
 	}
 
-	// Calculate the pixel weights for the samples spread over each OPC channel
-	_pixelWeights.resize(_parameters.servers.size());
-	for (size_t i = 0; i < _parameters.servers.size(); ++i)
-	{
-		const auto& server = _parameters.servers[i];
-
-		_pixelWeights[i].resize(server.channels.size());
-		for (size_t j = 0; j < server.channels.size(); ++j)
-		{
-			const auto& channel = server.channels[j];
-			const auto interval = static_cast<double>(channel.totalPixelCount) / static_cast<double>(channel.totalSampleCount);
-
-			_pixelWeights[i][j].resize(channel.totalPixelCount);
-			for (size_t k = 0; k < channel.totalPixelCount; ++k)
-			{
-				const size_t offset = (k * channel.totalSampleCount) / channel.totalPixelCount;
-				const double weight = k > 0 && k < channel.totalPixelCount - 1 && channel.totalPixelCount > channel.totalSampleCount
-					? 1.0
-					: 1.0;
-
-				_pixelWeights[i][j][k] = { offset, weight };
-			}
-		}
-	}
-
 	// Re-initialize the previous colors for fades.
 	if (_previousColors.empty())
 	{
@@ -414,6 +389,10 @@ bool screen_samples::render_channel(const settings::opc_channel& channel, pixel_
 	// Map the pixel ranges for this channel back to the previousColor values from the last snapshot.
 	for (const auto& range : channel.pixels)
 	{
+		std::vector<uint32_t> sampledPixels(range.pixelCount);
+
+		// Start with sampled pixels, which tends to make very abrupt transitions when the pixel count
+		// is higher than the sample count.
 		for (size_t pixelIndex = 0; pixelIndex < range.pixelCount; ++pixelIndex)
 		{
 			uint32_t pixelColor = 0;
@@ -435,7 +414,38 @@ bool screen_samples::render_channel(const settings::opc_channel& channel, pixel_
 				pixelColor = _previousColors[previousColorIndex];
 			}
 
-			// Write the pixel value to the message buffer.
+			sampledPixels[pixelIndex] = pixelColor;
+		}
+
+		// Write the pixel value to the message buffer, optionally blurring with the Gaussian kernel.
+		for (size_t pixelIndex = 0; pixelIndex < range.pixelCount; ++pixelIndex)
+		{
+			auto pixelColor = sampledPixels[pixelIndex];
+
+			if (pixelIndex >= range.kernelRadius && pixelIndex + range.kernelRadius < range.pixelCount)
+			{
+				double r = 0.0;
+				double g = 0.0;
+				double b = 0.0;
+				double a = 0.0;
+
+				for (size_t x = 0; x < range.kernelWeights.size(); ++x)
+				{
+					const auto weight = range.kernelWeights[x];
+					const auto sample = sampledPixels[x + pixelIndex - range.kernelRadius];
+
+					r += static_cast<double>((sample >> 24) & 0xFF) * weight;
+					g += static_cast<double>((sample >> 16) & 0xFF) * weight;
+					b += static_cast<double>((sample >> 8) & 0xFF) * weight;
+					a += static_cast<double>(sample & 0xFF) * weight;
+				}
+
+				pixelColor = (static_cast<size_t>(std::min(255.0, std::max(0.0, std::round(r)))) << 24)
+					| (static_cast<size_t>(std::min(255.0, std::max(0.0, std::round(g)))) << 16)
+					| (static_cast<size_t>(std::min(255.0, std::max(0.0, std::round(b)))) << 8)
+					| static_cast<size_t>(std::min(255.0, std::max(0.0, std::round(a))));
+			}
+
 			pixels << pixelColor;
 		}
 	}
@@ -461,7 +471,6 @@ void screen_samples::free_resources()
 
 	_displays.clear();
 	_pixelOffsets.clear();
-	_pixelWeights.clear();
 
 	if (_startTick > 0)
 	{

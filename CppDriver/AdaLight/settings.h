@@ -131,6 +131,8 @@ struct settings
 		std::vector<std::vector<size_t>> displayIndex;
 
 		size_t sampleCount = 0;
+		size_t kernelRadius = 0;
+		std::vector<double> kernelWeights;
 	};
 
 	// Each channel can have multiple ranges. They cannot overlap, but if they
