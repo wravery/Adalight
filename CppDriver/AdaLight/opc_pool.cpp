@@ -108,7 +108,7 @@ bool opc_pool::opc_connection::open()
 
 		if (_socket != INVALID_SOCKET)
 		{
-			const int result = connect(_socket, address->ai_addr, address->ai_addrlen);
+			const int result = connect(_socket, address->ai_addr, static_cast<int>(address->ai_addrlen));
 
 			if (!result)
 			{

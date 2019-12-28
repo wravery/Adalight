@@ -149,7 +149,7 @@ bool serial_port::send(const pixel_buffer& buffer)
 
 	DWORD cbWritten = 0;
 
-	if (!WriteFile(_portHandle, reinterpret_cast<const void*>(buffer.data()), buffer.size(), &cbWritten, nullptr)
+	if (!WriteFile(_portHandle, reinterpret_cast<const void*>(buffer.data()), static_cast<DWORD>(buffer.size()), &cbWritten, nullptr)
 		|| buffer.size() != static_cast<size_t>(cbWritten))
 	{
 		close();

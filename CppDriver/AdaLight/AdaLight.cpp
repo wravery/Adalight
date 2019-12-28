@@ -221,6 +221,7 @@ static void DisplayLastError()
 }
 
 // Run the program.
+_Use_decl_annotations_
 int WINAPI wWinMain(HINSTANCE hinstExe, HINSTANCE /*hinstPrev*/, PWSTR /*wzCmdLine*/, int /*nCmdShow*/)
 {
 	// TODO: Run in an interactive service? Tough to deal with user switching. Need to handle WM_DISPLAYCHANGE with a hidden top-level window.
@@ -268,5 +269,5 @@ int WINAPI wWinMain(HINSTANCE hinstExe, HINSTANCE /*hinstPrev*/, PWSTR /*wzCmdLi
 		DispatchMessageW(&msg);
 	}
 
-	return msg.wParam;
+	return static_cast<int>(msg.wParam);
 }

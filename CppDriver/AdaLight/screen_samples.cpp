@@ -440,10 +440,10 @@ bool screen_samples::render_channel(const settings::opc_channel& channel, pixel_
 					a += static_cast<double>(sample & 0xFF) * weight;
 				}
 
-				pixelColor = (static_cast<size_t>(std::min(255.0, std::max(0.0, std::round(r)))) << 24)
-					| (static_cast<size_t>(std::min(255.0, std::max(0.0, std::round(g)))) << 16)
-					| (static_cast<size_t>(std::min(255.0, std::max(0.0, std::round(b)))) << 8)
-					| static_cast<size_t>(std::min(255.0, std::max(0.0, std::round(a))));
+				pixelColor = (static_cast<uint32_t>(std::min(255.0, std::max(0.0, std::round(r)))) << 24)
+					| (static_cast<uint32_t>(std::min(255.0, std::max(0.0, std::round(g)))) << 16)
+					| (static_cast<uint32_t>(std::min(255.0, std::max(0.0, std::round(b)))) << 8)
+					| static_cast<uint32_t>(std::min(255.0, std::max(0.0, std::round(a))));
 			}
 
 			pixels << pixelColor;
